@@ -1,5 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.combat;
-
 import game.core.GameEntity;
 /**
  * Interface for any entity that can engage in combat.

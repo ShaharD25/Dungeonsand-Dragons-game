@@ -1,5 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.characters;
-
 import game.Main;
 import game.combat.*;
 import game.map.Position;

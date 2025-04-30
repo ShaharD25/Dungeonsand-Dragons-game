@@ -1,3 +1,5 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.characters;
 import game.combat.Combatant;
 import game.core.GameEntity;
@@ -19,16 +21,24 @@ public abstract class AbstractCharacter implements Combatant, GameEntity {
     public AbstractCharacter(Position position) {
         this.position = position;
         this.health = 100;
-        this.power = (int)(Math.random() * 11) + 4; // בין 4 ל-14
-    }
+        this.power = (int)(Math.random() * 11) + 4; //
+}
 
     // Getters and setters for position
     public Position getPosition() {
         return position;
     }
 
-    public void setPosition(Position position) {
-        this.position = position;
+//    public void setPosition(Position position) {
+//        this.position = position;
+//    }
+
+    public boolean setPosition(Position position) {
+        if (position != null) {
+            this.position = position;
+            return true;
+        }
+        return false;
     }
 
 

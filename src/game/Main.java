@@ -1,5 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game;
-
 import game.characters.*;
 import game.combat.CombatSystem;
 import game.combat.MagicElement;
@@ -54,6 +55,7 @@ public class Main {
     public static void playGame(GameWorld world, PlayerCharacter player, Scanner scanner) {
         Random rand = new Random();
         int size = 10;
+
         System.out.println("\nThe game has started!");
 
         while (!player.isDead()) {
@@ -68,37 +70,72 @@ public class Main {
                     scanner.nextLine();
                     int roll = rand.nextInt(10) + 1;
                     System.out.println(player.getName() + " rolled: " + roll);
-                    handleTurn(world, player, size, roll);
+
+                    Position newPos = movePlayer(world, player, size);
+
+                    if (newPos != null) {
+                        updateVisibility(world, player);
+                        printMap(world);
+                        if (!player.isDead()) {
+                            handleInteractions(world, player, newPos);
+                            updateVisibility(world, player);
+                            printMap(world);
+                        }
+                    } else {
+                        System.out.println("Blocked by wall or invalid move.");
+                    }
                 }
+
                 case INTERACT -> {
                     System.out.println("\n--- Interacting with current cell ---");
                     handleInteractions(world, player, player.getPosition());
+                    updateVisibility(world, player);
+                    printMap(world);
                 }
             }
         }
-        System.out.println( player.getName() + " has died. Game Over.");
+
+        System.out.println(player.getName() + " has died. Game Over.");
     }
+
 
 
     /**
      * Makes visible all entities within 1 tile (Manhattan distance < 2) of the player.
      */
+//    public static void updateVisibility(GameWorld world, PlayerCharacter player) {
+//        GameMap map = world.getMap();
+//        for (Map.Entry<Position, List<GameEntity>> entry: map.getGrid().entrySet()) {
+//              Position p = entry.getKey();
+//              List<GameEntity> entities = entry.getValue();
+//
+//            if(calcDistance(p, player.getPosition()) < 2) {
+//                for(GameEntity entity: entities) {
+//                    if (entity!=null)
+//                    {
+//                        entity.setVisible(true);
+//                    }
+//                }
+//            }
+//        }
+//    }
     public static void updateVisibility(GameWorld world, PlayerCharacter player) {
         GameMap map = world.getMap();
-        for (Map.Entry<Position, List<GameEntity>> entry: map.getGrid().entrySet()) {
-              Position p = entry.getKey();
-              List<GameEntity> entities = entry.getValue();
+        Position playerPos = player.getPosition();
 
-            if(calcDistance(p, player.getPosition()) < 2) {
-                for(GameEntity entity: entities) {
-                    if (entity!=null)
-                    {
+        for (Map.Entry<Position, List<GameEntity>> entry : map.getGrid().entrySet()) {
+            for (GameEntity entity : entry.getValue()) {
+                if (entity != null) {
+                    entity.setVisible(false);
+
+                    if (calcDistance(playerPos, entity.getPosition()) <= 2) {
                         entity.setVisible(true);
                     }
                 }
             }
         }
     }
+
 
     /**
      * Returns the Manhattan distance between two positions.
@@ -152,32 +189,36 @@ public class Main {
                 return null;
             }
         }
+
         if (newRow < 0 || newRow >= size || newCol < 0 || newCol >= size) {
             System.out.println("Cannot move outside the board!");
             return null;
         }
+
         Position newPos = new Position(newRow, newCol);
 
-        // Invalid position check
-        if (!map.isValidPosition(newPos) || !map.getEntitiesAt(newPos).isEmpty()) {
-            System.out.println("Can't move there (either wall or occupied).");
-            return null;
+        List<GameEntity> entitiesAtNewPos = map.getEntitiesAt(newPos);
+
+        System.out.println("Trying to move to (" + newRow + "," + newCol + ")");
+        for (GameEntity entity : entitiesAtNewPos) {
+            if (entity != null)
+                System.out.println("- " + entity.getClass().getSimpleName());
         }
-        // Handle walls
-        boolean hasWall = map.getEntitiesAt(newPos).stream()
+
+        boolean hasWall = entitiesAtNewPos.stream()
                 .anyMatch(e -> e instanceof Wall);
         if (hasWall) {
             System.out.println("Blocked by wall!");
             return null;
         }
 
-        handleInteractions(world, player, newPos);// Perform interaction before moving
-        if (player.isDead()) return null; // Check if the player is dead after interaction
+        handleInteractions(world, player, newPos);
+        if (player.isDead()) return null;
 
-        // Remove player from old location and add to new one
         map.removeEntity(current, player);
         player.setPosition(newPos);
         map.addEntity(newPos, player);
+
         return newPos;
     }
 
@@ -200,30 +241,47 @@ public class Main {
         for (GameEntity entity : entities) {
             if (entity == null) continue;
 
-            // Enemy interaction: combat is initiated
+            // --- Enemy Interaction ---
             if (entity instanceof Enemy enemy) {
-                System.out.println("Encountered enemy: " + enemy.getClass().getSimpleName());
+                System.out.println("\nEncountered enemy: " + enemy.getClass().getSimpleName());
+                System.out.println("Player HP: " + player.getHealth() + "/100");
+                System.out.println(enemy.getClass().getSimpleName() + " HP: " + enemy.getHealth() + "/100");
+
                 CombatSystem.resolveCombat(player, enemy);
 
+                System.out.println("--- After Combat ---");
+                System.out.println("Player HP: " + player.getHealth() + "/100");
+
+                if (!enemy.isDead()) {
+                    System.out.println(enemy.getClass().getSimpleName() + " HP: " + enemy.getHealth() + "/100");
+                } else {
+                    System.out.println(enemy.getClass().getSimpleName() + " has been defeated!");
+                }
+
                 if (player.isDead()) {
-                    System.out.println(" You have died in battle.");
-                    break; // Stop further interactions if dead
+                    System.out.println("You have died in battle.");
+                    break;
                 }
             }
 
-            // Potion interaction
+            // --- Potion Interaction ---
             else if (entity instanceof Potion potion) {
-                System.out.println(" You found a potion.");
+                System.out.println("\nYou found a potion!");
+                int oldHp = player.getHealth();
                 potion.interact(player);
+                System.out.println("HP before potion: " + oldHp + "/100");
+                System.out.println("HP after potion: " + player.getHealth() + "/100");
             }
-            // Treasure interaction
+
+            // --- Treasure Interaction ---
             else if (entity instanceof Treasure treasure) {
-                System.out.println("You found a treasure!");
+                System.out.println("\nYou found a treasure!");
                 treasure.interact(player);
             }
-            // If it's a wall or unhandled object — ignore it
+
+            // --- Other Entities ---
             else {
-                System.out.println("No interaction possible with: " + entity.getClass().getSimpleName());
+                System.out.println("\nNo interaction possible with: " + entity.getClass().getSimpleName());
             }
         }
     }
@@ -255,12 +313,16 @@ public class Main {
      * @param size      The size of the game board.
      */
     public static void prepareGame(GameWorld gameWorld, int size) {
-        GameEntity entity;
+        //GameEntity entity;
         for (int row  = 0; row  < size; row ++) {
             for (int col  = 0; col  < size; col ++) {
                 Position p = new Position(row, col );
-                entity= getNewMapEntity(p);
-                gameWorld.getMap().addEntity(p, entity);
+                GameEntity entity= getNewMapEntity(p);
+                if (entity !=null){
+                    entity.setPosition(p);
+                    gameWorld.getMap().addEntity(p, entity);
+
+                }
             }
         }
     }
@@ -273,40 +335,35 @@ public class Main {
      * @param pos The position for the entity.
      * @return A new GameEntity or null (empty cell).
      */
-    public static GameEntity getNewMapEntity(Position pos)
-    {
+    public static GameEntity getNewMapEntity(Position pos) {
         Random rand = new Random();
-        if(rand.nextInt(4) == 0) {
-            // 40% return nothing.
-            return null;
-        }
+        int chance = rand.nextInt(100); // מספר בין 0 ל-99
 
-        if(rand.nextInt(3) == 0) {
-            // 30% return enemy.
-            int loot = rand.nextInt(50) + 50; // TODO
-            int enemyRand = rand.nextInt(3);
-            switch (enemyRand) {
-                case 0: return new Dragon(loot, pos);
-                case 1: return new Orc(loot, pos);
-                case 2: return new Goblin(loot, pos);
+        if (chance < 40) {
+            return null; // 40% סיכוי שלא יווצר כלום
+        } else if (chance < 70) {
+            // 30% סיכוי לאויב
+            int enemyType = rand.nextInt(3);
+            switch (enemyType) {
+                case 0 -> { return new Dragon(50, pos); }
+                case 1 -> { return new Orc(50, pos); }
+                case 2 -> { return new Goblin(50, pos); }
+            }
+        } else if (chance < 80) {
+            // 10% סיכוי לקיר
+            return new Wall(pos);
+        } else {
+            // 20% סיכוי לשיקוי
+            int potionChance = rand.nextInt(100); // 0-99
+            if (potionChance < 75) {
+                return new Potion(pos); // שיקוי חיים (75% מתוך ה-20%)
+            } else {
+                return new PowerPotion(pos); // שיקוי עוצמה (25% מתוך ה-20%)
             }
         }
-
-        // Return wall
-        if(rand.nextInt(10) == 0) {
-            // 10% return wall.
-            return new Wall(pos);
-        }
-
-        // Return Potion
-        if(rand.nextInt(15) == 0) {
-            // 15% return potion.
-            return new Potion(pos);
-        }
-
-        // Return Power Potion.
-        return new PowerPotion(pos);
+        return null;
     }
+
 
     /**
      * Allows the player to choose a character (Warrior, Mage, or Archer), places
@@ -347,6 +404,8 @@ public class Main {
         player.setVisible(true);
         map.addEntity(pos, player);
         gameWorld.getPlayers().add(player);
+        map.addEntity(pos, new Potion(pos)); // DEBUG: adds a potion in the player's cell
+
         System.out.println("Player " + name + " placed at: (Row: " + (pos.getRow() + 1) + ", Col: " + (pos.getCol() + 1) + ")");
     }
 
@@ -383,24 +442,61 @@ public class Main {
 
         System.out.println("Current Map:");
         for (int row = 0; row < size; row++) {
-            for (int col  = 0; col  < size; col ++) {
-                Position pos = new Position(row, col );
+            for (int col = 0; col < size; col++) {
+                Position pos = new Position(row, col);
                 List<GameEntity> entities = map.getEntitiesAt(pos);
 
                 boolean printed = false;
+
                 if (pos.equals(playerPos)) {
+                    // מציג את השחקן
                     String symbol = player.getDisplaySymbol();
                     System.out.print("[" + symbol.charAt(0) + "]");
                     continue;
                 }
 
+                boolean hasVisibleEnemy = false;
+                boolean hasWall = false;
+                boolean hasVisibleTreasure = false;
+                boolean hasVisiblePotion = false;
+                boolean hasVisibleOther = false;
+
                 for (GameEntity entity : entities) {
-                    if (entity != null && entity.isVisible()) {
-                        System.out.print("[" + entity.getDisplaySymbol().charAt(0) + "]");
-                        printed = true;
-                        break;
+                    if (entity != null) {
+                        boolean isClose = calcDistance(playerPos, entity.getPosition()) <= 2;
+
+                        if (entity instanceof Enemy && (entity.isVisible() || isClose)) {
+                            hasVisibleEnemy = true;
+                        } else if (entity instanceof Wall && (entity.isVisible() || isClose)) {
+                            hasWall = true;
+                        } else if (entity instanceof Treasure && (entity.isVisible() || isClose)) {
+                            hasVisibleTreasure = true;
+                        } else if ((entity instanceof Potion || entity instanceof PowerPotion) && (entity.isVisible() || isClose)) {
+                            hasVisiblePotion = true;
+                        } else if (entity.isVisible() || isClose) {
+                            hasVisibleOther = true;
+                        }
                     }
                 }
+
+                // ❗ סדר חשוב: אויב קודם, קיר אחר כך
+                if (hasVisibleEnemy) {
+                    System.out.print("[E]");
+                    printed = true;
+                } else if (hasWall) {
+                    System.out.print("[|]");
+                    printed = true;
+                } else if (hasVisibleTreasure) {
+                    System.out.print("[T]");
+                    printed = true;
+                } else if (hasVisiblePotion) {
+                    System.out.print("[P]");
+                    printed = true;
+                } else if (hasVisibleOther) {
+                    System.out.print("[?]");
+                    printed = true;
+                }
+
                 if (!printed) {
                     System.out.print("[ ]");
                 }
@@ -408,6 +504,9 @@ public class Main {
             System.out.println();
         }
     }
+
+
+
 
 
     /**

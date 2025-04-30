@@ -1,5 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.items;
-
 import game.core.GameEntity;
 import game.map.Position;
 
@@ -38,12 +39,20 @@ public abstract class GameItem implements GameEntity {
      */
     public Position getPosition(){return position;}
 
-    /**
-     * Updates the position of the item.
-     *
-     * @param newPos New position for the item
-     */
-    public void setPosition(Position newPos){this.position = newPos;}
+//    /**
+//     * Updates the position of the item.
+//     *
+//     * @param newPos New position for the item
+//     */
+//    public void setPosition(Position newPos){this.position = newPos;}
+
+    public boolean setPosition(Position position) {
+        if (position != null) {
+            this.position = position;
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Indicates whether this item blocks movement on the board.
@@ -69,6 +78,13 @@ public abstract class GameItem implements GameEntity {
     /**
      * Sets a new description for the item.
      */
-    public void setDescription(String description){this.description = description;}
+    //public void setDescription(String description){this.description = description;}
 
+    public boolean setDescription(String description) {
+        if (description != null && !description.isBlank()) {
+            this.description = description;
+            return true;
+        }
+        return false;
+    }
 }

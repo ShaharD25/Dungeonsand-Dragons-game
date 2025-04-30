@@ -1,3 +1,5 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.combat;
 /**
  * Interface for entities that can perform magical attacks.

@@ -1,9 +1,10 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.core;
 import java.util.*;
 import game.items.GameItem;
 import game.items.Potion;
 import game.items.PowerPotion;
-
 /**
  * Represents the player's inventory, which holds items collected throughout the game.
  * Items can be added, removed, and retrieved.

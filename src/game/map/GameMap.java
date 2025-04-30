@@ -18,10 +18,17 @@ public class GameMap {
      * @param pos The position to place the entity at.
      * @param entity The entity to be added.
      */
-    public void addEntity(Position pos, GameEntity entity) {
-        if (entity == null) return;
+//    public void addEntity(Position pos, GameEntity entity) {
+//        if (entity == null) return;
+//        grid.computeIfAbsent(pos, k -> new ArrayList<>()).add(entity);
+//    }
+
+    public boolean addEntity(Position pos, GameEntity entity) {
+        if (pos == null || entity == null) return false;
         grid.computeIfAbsent(pos, k -> new ArrayList<>()).add(entity);
+        return true;
     }
+
 
 
     /**
@@ -31,15 +38,25 @@ public class GameMap {
      * @param pos The position from which to remove the entity.
      * @param entity The entity to be removed.
      */
-    public void removeEntity(Position pos, GameEntity entity) {
+//    public void removeEntity(Position pos, GameEntity entity) {
+//        List<GameEntity> entities = grid.get(pos);
+//        if (entities != null) {
+//            entities.remove(entity);
+//            if (entities.isEmpty()) {
+//                grid.remove(pos);
+//            }
+//        }
+//    }
+
+    public boolean removeEntity(Position pos, GameEntity entity) {
         List<GameEntity> entities = grid.get(pos);
-        if (entities != null) {
-            entities.remove(entity);
-            if (entities.isEmpty()) {
-                grid.remove(pos);
-            }
+        if (entities != null && entity != null && entities.remove(entity)) {
+            if (entities.isEmpty()) grid.remove(pos);
+            return true;
         }
+        return false;
     }
+
 
     /**
      * Returns the list of entities at a given position.

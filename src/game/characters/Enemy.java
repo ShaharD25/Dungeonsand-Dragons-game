@@ -1,3 +1,5 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.characters;
 import game.items.Treasure;
 import game.map.Position;
@@ -49,10 +51,12 @@ public abstract class Enemy extends AbstractCharacter{
      *
      * @param loot The new loot value to assign.
      */
-    public void setLoot(int loot) {
+    public boolean setLoot(int loot) {
         if (loot >= 0) {
             this.loot = loot;
+            return true;
         }
+        return false;
     }
 
 }

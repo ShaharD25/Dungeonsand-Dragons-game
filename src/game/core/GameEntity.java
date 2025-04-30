@@ -1,6 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.core;
-
-
 import game.map.Position;
 /**
  * Interface representing any object that can exist on the game board.
@@ -23,7 +23,8 @@ public interface GameEntity {
      *
      * @param newPos The new position
      */
-    void setPosition(Position newPos);
+    //void setPosition(Position newPos);
+    public boolean setPosition(Position newPos);
     /**
      * Returns the symbol that should be displayed on the map for this entity.
      * This helps distinguish between entity types (e.g., "P" for potion, "D" for dragon).

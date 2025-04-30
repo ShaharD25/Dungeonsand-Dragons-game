@@ -1,5 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.characters;
-
 import game.combat.Combatant;
 import game.combat.MeleeFighter;
 import game.combat.PhysicalAttacker;
@@ -73,10 +74,12 @@ public class Goblin extends Enemy implements MeleeFighter, PhysicalAttacker {
     /**
      * Sets the goblin's agility, capped between 0–80.
      */
-    public void setAgility(int agility) {
+    public boolean setAgility(int agility) {
         if (agility >= 0 && agility <= 80) {
             this.agility = agility;
+            return true;
         }
+        return false;
     }
 
     /**

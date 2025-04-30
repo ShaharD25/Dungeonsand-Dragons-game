@@ -1,5 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.combat;
-
 /**
  * Enum representing different types of magical elements.
  * Used by magical attackers like Mage and Dragon.

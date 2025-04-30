@@ -1,3 +1,5 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.combat;
 import game.map.Position;
 import game.characters.*;
@@ -71,7 +73,6 @@ public class CombatSystem {
         {
             System.out.println(defender.getDisplaySymbol() + "You are dead");
             if (defender instanceof Enemy enemy) // If the defender is an enemy, drop loot
-
             {
                 enemy.defeat();// Drop treasure on the map
             }

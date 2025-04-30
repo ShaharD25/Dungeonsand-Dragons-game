@@ -1,5 +1,7 @@
 package game.map;
 
+import java.util.Objects;
+
 /**
  * Represents a 2D position on the game board.
  * Each position contains a row (Y-axis) and column (X-axis).
@@ -74,6 +76,11 @@ public class Position {
         if (o == null || getClass() != o.getClass()) return false;
         Position position = (Position) o;
         return row == position.row && col == position.col;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(row, col);
     }
 
     /**

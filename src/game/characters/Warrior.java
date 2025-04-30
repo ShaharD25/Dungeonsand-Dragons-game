@@ -1,3 +1,5 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.characters;
 import game.combat.Combatant;
 import game.combat.MeleeFighter;
@@ -59,7 +61,7 @@ public class Warrior extends PlayerCharacter implements PhysicalAttacker, MeleeF
      * Performs a melee (close-range) attack.
      */
     @Override
-    public void fightClose(Combatant target){attack(target);}
+    public void fightClose(Combatant target){attack(target);}//boolean??
 
     /**
      * Checks if the target is within melee range (distance ≤ 1).
@@ -77,11 +79,18 @@ public class Warrior extends PlayerCharacter implements PhysicalAttacker, MeleeF
     }
 
     /**
-     * Sets the warrior's defence, clamped between 0 and 120.
+     * Attempts to set the warrior's defence value.
+     * Only accepts values in the range [0, 120].
+     *
+     * @param defence The new defence value to set.
+     * @return true if the value was accepted and set, false otherwise.
      */
-    public void setDefence(int defence) {
-        if (defence >= 0 && defence <= 120)
+    public boolean setDefence(int defence) {
+        if (defence >= 0 && defence <= 120) {
             this.defence = defence;
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -1,3 +1,5 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.items;
 import game.characters.PlayerCharacter;
 import game.items.GameItem;
@@ -51,5 +53,10 @@ public class Treasure extends GameItem implements Interactable{
     @Override
     public boolean isVisible() {
         return false;
+    }
+
+    @Override
+    public String getDisplaySymbol() {
+        return "T";
     }
 }

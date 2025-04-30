@@ -1,5 +1,6 @@
+//Artiom Bondar:332692730
+//Shahar Dahan: 207336355
 package game.engine;
-
 import game.characters.Enemy;
 import game.characters.PlayerCharacter;
 import game.core.GameEntity;
@@ -64,7 +65,15 @@ public class GameWorld {
      * Replaces the current game map with a new one.
      * Used during game setup.
      */
-    public void setMap(GameMap map) {this.map = map;}
+    //public void setMap(GameMap map) {this.map = map;}
+    public boolean setMap(GameMap map) {
+        if (map != null) {
+            this.map = map;
+            return true;
+        }
+        return false;
+    }
+
     public GameMap getMap() { return map; }
 
 
