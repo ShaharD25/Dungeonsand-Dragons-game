@@ -47,9 +47,4 @@ public class Potion extends GameItem implements Interactable {
         c.setHealth(currentHealth);
         this.isUsed = true;
     }
-
-    @Override
-    public boolean isVisible() {
-        return false;
-    }
 }

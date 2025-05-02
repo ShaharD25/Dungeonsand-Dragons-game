@@ -101,14 +101,6 @@ public class Warrior extends PlayerCharacter implements PhysicalAttacker, MeleeF
         return "W";
     }
 
-    /**
-     * Whether the Warrior is visible on the map.
-     * Default is false – should be updated externally via visibility logic.
-     */
-    @Override
-    public boolean isVisible() {
-        return false;
-    }
 
     /**
      * Calculates attack damage.

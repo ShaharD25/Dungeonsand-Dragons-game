@@ -41,42 +41,50 @@ public class CombatSystem {
           }
       }
 
-        // Check if defender evades the attack
-      if (defender.tryEvade())
-      {
-          System.out.println("You are evadable");
-          return;
-      }
+//        // Check if defender evades the attack
+//      if (defender.tryEvade())
+//      {
+//          System.out.println("You are evadable");
+//          return;
+//      }
 
         // If both attacker and defender use magic, compare their elements
-        if(attacker instanceof MagicAttacker magicAttacker &&
-      defender instanceof MagicAttacker magicDefender){
-          if (magicAttacker.isElementStrongerThan(magicDefender)){
-              System.out.println("You are stronger than magic attacker");
-          }
-          else if(!magicAttacker.getElement().equals(magicDefender.getElement()) &&
-            !magicAttacker.getElement().isStrongerThan(magicDefender.getElement())){
-              System.out.println("You are not stronger than magic attacker");
-          }
-      }
-        // Perform the actual attack: either cast a spell or do a physical attack
-        if (attacker instanceof MagicAttacker magic) {
-            magic.castSpell(defender);
-        } else if (attacker instanceof PhysicalAttacker physical) {
-            physical.attack(defender);
-        }
-        else {
-            System.out.println("Unknown attacker");
-        }
-        // After attack: check if the defender died
-        if (defender.isDead())
-        {
-            System.out.println(defender.getDisplaySymbol() + "You are dead");
-            if (defender instanceof Enemy enemy) // If the defender is an enemy, drop loot
-            {
-                enemy.defeat();// Drop treasure on the map
+//        if(attacker instanceof MagicAttacker magicAttacker &&
+//      defender instanceof MagicAttacker magicDefender){
+//          if (magicAttacker.isElementStrongerThan(magicDefender)){
+//              System.out.println("You are stronger than magic attacker");
+//          }
+//          else if(!magicAttacker.getElement().equals(magicDefender.getElement()) &&
+//            !magicAttacker.getElement().isStrongerThan(magicDefender.getElement())){
+//              System.out.println("You are not stronger than magic attacker");
+//          }
+//      }
+
+        do{
+            // Perform the actual attack: either cast a spell or do a physical attack
+            if (attacker instanceof MagicAttacker magic) {
+                magic.castSpell(defender);
+            } else if (attacker instanceof PhysicalAttacker physical) {
+                physical.attack(defender);
             }
-        }
+            else {
+                System.out.println("Unknown attacker");
+            }
+            // After attack: check if the defender died
+            if (defender.isDead())
+            {
+                if (defender instanceof Enemy enemy) // If the defender is an enemy, drop loot
+                {
+                    enemy.defeat();// Drop treasure on the map
+                    break;
+                }
+            }
+            Combatant temp = defender;
+            defender = attacker;
+            attacker = temp;
+        }while(!defender.isDead());
+
+
 
 
     }

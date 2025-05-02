@@ -96,12 +96,4 @@ public class Archer extends PlayerCharacter implements PhysicalAttacker, RangedF
     }
 
 
-    /**
-     * Returns whether this Archer is visible on the map.
-     * Currently hardcoded as false (can be updated by the game engine).
-     */
-    @Override
-    public boolean isVisible() {
-        return false;
-    }
 }

@@ -50,10 +50,6 @@ public class Treasure extends GameItem implements Interactable{
         this.collected = true;
     }
 
-    @Override
-    public boolean isVisible() {
-        return false;
-    }
 
     @Override
     public String getDisplaySymbol() {

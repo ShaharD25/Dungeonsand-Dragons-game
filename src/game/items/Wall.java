@@ -16,10 +16,6 @@ public class Wall extends GameItem{
         super(position,true,"Wall",true, "W");
     }
 
-    @Override
-    public boolean isVisible() {return false;}
-
-
 }
 
 

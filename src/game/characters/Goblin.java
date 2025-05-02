@@ -2,6 +2,7 @@
 //Shahar Dahan: 207336355
 package game.characters;
 import game.combat.Combatant;
+import game.combat.MagicAttacker;
 import game.combat.MeleeFighter;
 import game.combat.PhysicalAttacker;
 import game.map.Position;
@@ -90,14 +91,6 @@ public class Goblin extends Enemy implements MeleeFighter, PhysicalAttacker {
         return "G";
     }
 
-    /**
-     * Determines if the goblin is visible on the map.
-     * (Default is false — can be updated by visibility logic.)
-     */
-    @Override
-    public boolean isVisible() {
-        return false;
-    }
 
     /**
      * Calculates the total damage dealt by this combatant.
@@ -111,5 +104,10 @@ public class Goblin extends Enemy implements MeleeFighter, PhysicalAttacker {
         } else {
             return getPower();
         }
+    }
+
+    @Override
+    public void receiveDamage(int amount, Combatant source) {
+        super.receiveDamage(amount, source);
     }
 }

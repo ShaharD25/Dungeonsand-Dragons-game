@@ -107,13 +107,4 @@ public class Mage extends PlayerCharacter implements MagicAttacker, RangedFighte
     public String getDisplaySymbol() {
         return "M";
     }
-
-    /**
-     * Indicates if the Mage is visible to the player.
-     * Initially false – visibility is managed externally.
-     */
-    @Override
-    public boolean isVisible() {
-        return false;
-    }
 }

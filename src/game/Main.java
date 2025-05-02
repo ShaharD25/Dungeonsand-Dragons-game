@@ -6,6 +6,7 @@ import game.combat.CombatSystem;
 import game.combat.MagicElement;
 import game.core.GameEntity;
 import game.engine.GameWorld;
+import game.gui.GameFrame;
 import game.items.*;
 import game.map.GameMap;
 import game.map.Position;
@@ -23,7 +24,8 @@ public class Main {
         initializeGame(world, scanner);// Set up the game map and player
 
         PlayerCharacter player = world.getPlayers().get(0);// Get the player character
-        playGame(world, player, scanner);
+        GameFrame gf = new GameFrame(player);
+        //playGame(world, player, scanner);
     }
 
 
@@ -65,21 +67,16 @@ public class Main {
 
             switch (action) {
                 case MOVE -> {
-                    System.out.println("\n--- Moving ---");
-                    System.out.println("Press ENTER to roll the dice...");
-                    scanner.nextLine();
-                    int roll = rand.nextInt(10) + 1;
-                    System.out.println(player.getName() + " rolled: " + roll);
-
+                    //scanner.nextLine();
                     Position newPos = movePlayer(world, player, size);
 
                     if (newPos != null) {
-                        updateVisibility(world, player);
-                        printMap(world);
+                        //updateVisibility(world, player);
+                        //printMap(world);
                         if (!player.isDead()) {
                             handleInteractions(world, player, newPos);
-                            updateVisibility(world, player);
-                            printMap(world);
+                            //updateVisibility(world, player);
+                            //printMap(world);
                         }
                     } else {
                         System.out.println("Blocked by wall or invalid move.");
@@ -89,8 +86,8 @@ public class Main {
                 case INTERACT -> {
                     System.out.println("\n--- Interacting with current cell ---");
                     handleInteractions(world, player, player.getPosition());
-                    updateVisibility(world, player);
-                    printMap(world);
+                    //updateVisibility(world, player);
+                    //printMap(world);
                 }
             }
         }
@@ -212,8 +209,8 @@ public class Main {
             return null;
         }
 
-        handleInteractions(world, player, newPos);
-        if (player.isDead()) return null;
+        //handleInteractions(world, player, newPos);
+        //if (player.isDead()) return null;
 
         map.removeEntity(current, player);
         player.setPosition(newPos);
@@ -256,6 +253,8 @@ public class Main {
                     System.out.println(enemy.getClass().getSimpleName() + " HP: " + enemy.getHealth() + "/100");
                 } else {
                     System.out.println(enemy.getClass().getSimpleName() + " has been defeated!");
+                    GameMap map = world.getMap();
+                    map.removeEntity(pos, enemy);
                 }
 
                 if (player.isDead()) {
@@ -271,12 +270,16 @@ public class Main {
                 potion.interact(player);
                 System.out.println("HP before potion: " + oldHp + "/100");
                 System.out.println("HP after potion: " + player.getHealth() + "/100");
+                GameMap map = world.getMap();
+                map.removeEntity(pos, potion);
             }
 
             // --- Treasure Interaction ---
             else if (entity instanceof Treasure treasure) {
                 System.out.println("\nYou found a treasure!");
                 treasure.interact(player);
+                GameMap map = world.getMap();
+                map.removeEntity(pos, treasure);
             }
 
             // --- Other Entities ---
@@ -320,9 +323,8 @@ public class Main {
                 GameEntity entity= getNewMapEntity(p);
                 if (entity !=null){
                     entity.setPosition(p);
-                    gameWorld.getMap().addEntity(p, entity);
-
                 }
+                gameWorld.getMap().addEntity(p, entity);
             }
         }
     }
@@ -404,7 +406,7 @@ public class Main {
         player.setVisible(true);
         map.addEntity(pos, player);
         gameWorld.getPlayers().add(player);
-        map.addEntity(pos, new Potion(pos)); // DEBUG: adds a potion in the player's cell
+        //map.addEntity(pos, new Potion(pos)); // DEBUG: adds a potion in the player's cell
 
         System.out.println("Player " + name + " placed at: (Row: " + (pos.getRow() + 1) + ", Col: " + (pos.getCol() + 1) + ")");
     }
@@ -479,7 +481,6 @@ public class Main {
                     }
                 }
 
-                // ❗ סדר חשוב: אויב קודם, קיר אחר כך
                 if (hasVisibleEnemy) {
                     System.out.print("[E]");
                     printed = true;

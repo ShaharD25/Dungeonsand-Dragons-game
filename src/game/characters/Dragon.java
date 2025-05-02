@@ -129,12 +129,9 @@ public class Dragon extends Enemy implements MagicAttacker, PhysicalAttacker, Me
     }
 
 
-    /**
-     * Whether this dragon is currently visible to the player.
-     * By default, false (updated by visibility logic in game).
-     */
+
     @Override
-    public boolean isVisible() {
-        return false;
+    public void receiveDamage(int amount, Combatant source) {
+        super.receiveDamage(amount, source);
     }
 }

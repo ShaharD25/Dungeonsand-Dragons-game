@@ -10,7 +10,7 @@ import java.util.*;
  */
 public class GameMap {
     private Map<Position, List<GameEntity>> grid = new HashMap<>();
-
+    public int entitySize = 0;
     /**
      * Adds an entity to a specific position on the map.
      * If no entities exist at that position yet, a new list is created.
@@ -24,6 +24,7 @@ public class GameMap {
 //    }
 
     public boolean addEntity(Position pos, GameEntity entity) {
+        entitySize++;
         if (pos == null || entity == null) return false;
         grid.computeIfAbsent(pos, k -> new ArrayList<>()).add(entity);
         return true;
@@ -81,4 +82,9 @@ public class GameMap {
      * @return A map of all positions and their entity lists.
      */
     public Map<Position, List<GameEntity>> getGrid() {return grid;}
+
+    public int getMapSize()
+    {
+        return (int)Math.sqrt(entitySize);
+    }
 }

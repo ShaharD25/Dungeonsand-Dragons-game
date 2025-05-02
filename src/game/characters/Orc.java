@@ -61,14 +61,6 @@ public class Orc extends Enemy implements MeleeFighter, PhysicalAttacker {
         return "O";
     }
 
-    /**
-     * Indicates whether the Orc is currently visible on the map.
-     * (Default is false – managed externally).
-     */
-    @Override
-    public boolean isVisible() {
-        return false;
-    }
 
 
     /**

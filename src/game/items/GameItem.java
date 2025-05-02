@@ -75,6 +75,11 @@ public abstract class GameItem implements GameEntity {
      */
     public void setVisible(boolean visible){this.visible = visible;}
 
+    @Override
+    public boolean isVisible() {
+        return visible;
+    }
+
     /**
      * Sets a new description for the item.
      */
