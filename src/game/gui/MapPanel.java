@@ -1,30 +1,30 @@
 package game.gui;
+
 import game.characters.Enemy;
+import game.core.GameEntity;
 import game.engine.GameWorld;
-import game.items.Potion;
-import game.items.PowerPotion;
-import game.items.Treasure;
-import game.items.Wall;
+import game.items.*;
 import game.map.GameMap;
 import game.map.Position;
-import game.core.GameEntity;
+
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
 import java.util.List;
 
 import static game.Main.calcDistance;
 
-public class MapPanel extends JPanel{
+public class MapPanel extends JPanel {
     private JButton[][] gridButtons;
     private int mapSize;
 
-    public MapPanel(){
+    public MapPanel() {
         mapSize = GameWorld.getInstance().getMap().getMapSize();
-        setLayout(new GridLayout(mapSize,mapSize));
-        setPreferredSize(new Dimension(64*mapSize,64*mapSize));
+        setLayout(new GridLayout(mapSize, mapSize));
+        setPreferredSize(new Dimension(64 * mapSize, 64 * mapSize));
         gridButtons = new JButton[mapSize][mapSize];
-        for(int row = 0; row < mapSize; row++){
-            for(int col = 0; col < mapSize; col++){
+        for (int row = 0; row < mapSize; row++) {
+            for (int col = 0; col < mapSize; col++) {
                 JButton button = new JButton();
                 button.setEnabled(false);
                 button.setFocusable(false);
@@ -35,70 +35,72 @@ public class MapPanel extends JPanel{
         updateMap();
     }
 
-    public String getImagePath(String type)
-    {
-        switch(type)
-        {
+    public String getImagePath(String type) {
+        String base = "/game/resources/images/";
+        switch (type) {
             case "player":
                 String playerType = GameWorld.getInstance().getPlayers().get(0).getClass().getSimpleName();
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\" + playerType + ".png";
+                return base + playerType + ".png";
             case "D":
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\Dragon.png";
+                return base + "Dragon.png";
             case "G":
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\Goblin.png";
+                return base + "Goblin.png";
             case "O":
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\Orc.png";
+                return base + "Orc.png";
             case "T":
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\Treasure.png";
+                return base + "Treasure.png";
             case "W":
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\Wall.png";
+                return base + "Wall.png";
             case "L":
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\Life_potion.png";
+                return base + "Life_potion.png";
             case "P":
-                return "C:\\Users\\Artiom\\IdeaProjects\\HW1Tamar\\src\\game\\images\\Power_potion.png";
+                return base + "Power_potion.png";
+            default:
+                return "";
         }
-        return "";
     }
 
-    public void updateMap(){
+    private ImageIcon loadImageIcon(String path) {
+        URL url = getClass().getResource(path);
+        if (url != null) {
+            ImageIcon icon = new ImageIcon(url);
+            Image scaledImage = icon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImage);
+        } else {
+            System.err.println("Image not found: " + path);
+            return null;
+        }
+    }
+
+    public void updateMap() {
         GameMap map = GameWorld.getInstance().getMap();
         Position playerPos = GameWorld.getInstance().getPlayers().get(0).getPosition();
 
         for (int row = 0; row < mapSize; row++) {
             for (int col = 0; col < mapSize; col++) {
-                Position pos = new Position(row,col);
-                List <GameEntity> entities = map.getEntitiesAt(pos);
-
+                Position pos = new Position(row, col);
+                List<GameEntity> entities = map.getEntitiesAt(pos);
                 JButton button = gridButtons[row][col];
                 button.setIcon(null);
                 button.setEnabled(true);
 
                 if (pos.equals(playerPos)) {
-                    ImageIcon icon = new ImageIcon(getImagePath("player"));
-                    Image scaledImage = icon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
-                    ImageIcon scaledIcon = new ImageIcon(scaledImage);
-                    button.setIcon(scaledIcon);
+                    ImageIcon playerIcon = loadImageIcon(getImagePath("player"));
+                    if (playerIcon != null) button.setIcon(playerIcon);
                     continue;
                 }
 
                 for (GameEntity entity : entities) {
-
                     if (entity != null) {
                         boolean isClose = calcDistance(playerPos, entity.getPosition()) <= 2;
-                        if(isClose)
-                        {
-                            entity.setVisible(true);
-                        }
-                        else entity.setVisible(false);
+                        entity.setVisible(isClose);
                     }
-                    if (entity != null && entity.isVisible()){
-                        ImageIcon icon = new ImageIcon(getImagePath(entity.getDisplaySymbol()));
-                        Image scaledImage = icon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
-                        ImageIcon scaledIcon = new ImageIcon(scaledImage);
-                        button.setIcon(scaledIcon);
+
+                    if (entity != null && entity.isVisible()) {
+                        ImageIcon icon = loadImageIcon(getImagePath(entity.getDisplaySymbol()));
+                        if (icon != null) button.setIcon(icon);
                         break;
-                    }
-                    else {
+                    } else {
                         button.setText("");
                     }
                 }
@@ -107,8 +109,8 @@ public class MapPanel extends JPanel{
         revalidate();
         repaint();
     }
+
     public JButton getCellButton(int row, int col) {
         return gridButtons[row][col];
     }
-
 }
