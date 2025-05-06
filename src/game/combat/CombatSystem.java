@@ -1,8 +1,11 @@
 //Artiom Bondar:332692730
 //Shahar Dahan: 207336355
 package game.combat;
+import game.audio.SoundPlayer;
 import game.map.Position;
 import game.characters.*;
+import game.gui.PopupPanel;
+
 import game.characters.PlayerCharacter;
 
 /**
@@ -41,52 +44,71 @@ public class CombatSystem {
           }
       }
 
-//        // Check if defender evades the attack
-//      if (defender.tryEvade())
-//      {
-//          System.out.println("You are evadable");
-//          return;
-//      }
+        do {
+            boolean isCrit = Math.random() < 0.2; // 20% סיכוי לקריטית
 
-        // If both attacker and defender use magic, compare their elements
-//        if(attacker instanceof MagicAttacker magicAttacker &&
-//      defender instanceof MagicAttacker magicDefender){
-//          if (magicAttacker.isElementStrongerThan(magicDefender)){
-//              System.out.println("You are stronger than magic attacker");
-//          }
-//          else if(!magicAttacker.getElement().equals(magicDefender.getElement()) &&
-//            !magicAttacker.getElement().isStrongerThan(magicDefender.getElement())){
-//              System.out.println("You are not stronger than magic attacker");
-//          }
-//      }
-
-        do{
-            // Perform the actual attack: either cast a spell or do a physical attack
-            if (attacker instanceof MagicAttacker magic) {
-                magic.castSpell(defender);
-            } else if (attacker instanceof PhysicalAttacker physical) {
-                physical.attack(defender);
+            if (isCrit) {
+                PopupPanel.showPopup("Critical Hit!", "You landed a CRITICAL HIT!");
+                SoundPlayer.playSound("critical_hit.wav");
             }
-            else {
+
+            if (attacker instanceof MagicAttacker magic) {
+                if (isCrit && attacker instanceof PlayerCharacter pc) {
+                    defender.setHealth(defender.getHealth() - pc.getPower() * 2);
+                } else {
+                    magic.castSpell(defender);
+                    SoundPlayer.playSound("critical_hit.wav");
+                }
+
+            } else if (attacker instanceof PhysicalAttacker physical) {
+                if (isCrit && attacker instanceof PlayerCharacter pc) {
+                    defender.setHealth(defender.getHealth() - pc.getPower() * 2);
+                    SoundPlayer.playSound("critical_hit.wav");//
+                } else {
+                    physical.attack(defender); //
+                }
+
+            } else {
                 System.out.println("Unknown attacker");
             }
-            // After attack: check if the defender died
-            if (defender.isDead())
-            {
-                if (defender instanceof Enemy enemy) // If the defender is an enemy, drop loot
-                {
-                    enemy.defeat();// Drop treasure on the map
+
+            if (defender.isDead()) {
+                if (defender instanceof Enemy enemy) {
+                    enemy.defeat();
+                    SoundPlayer.playSound("enemy_down.wav");
                     break;
                 }
             }
+
             Combatant temp = defender;
             defender = attacker;
             attacker = temp;
-        }while(!defender.isDead());
+        } while (!defender.isDead());
 
 
 
-
+//        do{
+//            // Perform the actual attack: either cast a spell or do a physical attack
+//            if (attacker instanceof MagicAttacker magic) {
+//                magic.castSpell(defender);
+//            } else if (attacker instanceof PhysicalAttacker physical) {
+//                physical.attack(defender);
+//            }
+//            else {
+//                System.out.println("Unknown attacker");
+//            }
+//            // After attack: check if the defender died
+//            if (defender.isDead())
+//            {
+//                if (defender instanceof Enemy enemy) // If the defender is an enemy, drop loot
+//                {
+//                    enemy.defeat();// Drop treasure on the map
+//                    break;
+//                }
+//            }
+//            Combatant temp = defender;
+//            defender = attacker;
+//            attacker = temp;
+//        }while(!defender.isDead());
     }
-
 }

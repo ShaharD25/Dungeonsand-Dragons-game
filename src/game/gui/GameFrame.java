@@ -2,6 +2,7 @@ package game.gui;
 import javax.swing.*;
 import java.awt.*;
 import game.characters.PlayerCharacter;
+import game.engine.GameWorld;
 
 public class GameFrame extends JFrame {
     private final MapPanel mapPanel;
@@ -18,6 +19,7 @@ public class GameFrame extends JFrame {
 
         add(mapPanel, BorderLayout.CENTER);
         add(statusPanel, BorderLayout.EAST);
+        GameWorld.getInstance().setGameFrame(this);//עדכון של GAME WORLD
 
         pack();
         setLocationRelativeTo(null);

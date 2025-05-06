@@ -4,6 +4,7 @@ package game.engine;
 import game.characters.Enemy;
 import game.characters.PlayerCharacter;
 import game.core.GameEntity;
+import game.gui.GameFrame;
 import game.items.GameItem;
 import game.map.GameMap;
 import game.map.Position;
@@ -24,6 +25,9 @@ public class GameWorld {
     private List<GameItem> items;
     private GameMap map;
     private static GameWorld instance;
+
+    private GameFrame gameFrame;
+
 
 
     /**
@@ -82,5 +86,11 @@ public class GameWorld {
     //public List<GameEntity> getEntitiesAt(Position pos) { return map.getEntitiesAt(pos);}
     //public boolean isValidPosition(Position pos) {return map.isValidPosition(pos);  }
 
+    public void setGameFrame(GameFrame frame) {
+        this.gameFrame = frame;
+    }
 
+    public GameFrame getGameFrame() {
+        return gameFrame;
+    }
 }
