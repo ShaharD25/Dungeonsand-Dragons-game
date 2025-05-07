@@ -3,6 +3,7 @@ package game.gui;
 import game.Main;
 import game.characters.Enemy;
 import game.characters.PlayerCharacter;
+import game.combat.RangedFighter;
 import game.core.GameEntity;
 import game.engine.GameWorld;
 import game.items.*;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.util.List;
 
 import static game.Main.calcDistance;
+import static game.gui.PopupPanel.quickPopup;
 
 public class MapPanel extends JPanel {
     private JButton[][] gridButtons;
@@ -42,7 +44,13 @@ public class MapPanel extends JPanel {
                     GameWorld world = GameWorld.getInstance();
                     PlayerCharacter player = world.getPlayers().get(0);
                     Position clickedPos = new Position(r, c);
-                    Main.moveToPosition(world, player, clickedPos);
+                    int fightRange = 1;
+                    if(player instanceof RangedFighter)
+                        fightRange = 2;
+                    if (Main.calcDistance(player.getPosition(), clickedPos) <= fightRange) {
+                        Main.moveToPosition(world, player, clickedPos);
+                    }
+
                 });
 
                 // אינטראקציה עם כפתור ימני
@@ -53,11 +61,12 @@ public class MapPanel extends JPanel {
                             GameWorld world = GameWorld.getInstance();
                             PlayerCharacter player = world.getPlayers().get(0);
                             Position clickedPos = new Position(r, c);
+                            if (Main.calcDistance(player.getPosition(), clickedPos) <= 2) {
+                                quickPopup(world, clickedPos);
 
-                            if (Main.calcDistance(player.getPosition(), clickedPos) <= 1) {
-                                Main.handleInteractions(world, player, clickedPos);
-                                world.getGameFrame().getMapPanel().updateMap();
-                                world.getGameFrame().getStatusPanel().updateStatus(player);
+                                //Main.handleInteractions(world, player, clickedPos);
+                                //world.getGameFrame().getMapPanel().updateMap();
+                                //world.getGameFrame().getStatusPanel().updateStatus(player);
                             }
                         }
                     }
@@ -108,15 +117,6 @@ public class MapPanel extends JPanel {
         }
     }
 
-    private Color getHealthColor(int currentHp) {
-        if (currentHp >= 70)
-            return new Color(144, 238, 144); // Light Green
-        else if (currentHp >= 30)
-            return new Color(255, 255, 102); // Yellow
-        else
-            return new Color(255, 102, 102); // Light Red
-    }
-
     public void updateMap() {
         GameMap map = GameWorld.getInstance().getMap();
         Position playerPos = GameWorld.getInstance().getPlayers().get(0).getPosition();
@@ -140,14 +140,17 @@ public class MapPanel extends JPanel {
                         boolean isClose = calcDistance(playerPos, entity.getPosition()) <= 2;
                         entity.setVisible(isClose);
                     }
+                    else
+                        continue;
 
-                    if (entity != null && entity.isVisible()) {
-                        if (entity instanceof Enemy enemy)
-                        {
-                            Color healthColor = getHealthColor(enemy.getHealth());
-                            button.setBackground(healthColor);
-                        }
-                        ImageIcon icon = loadImageIcon(getImagePath(entity.getDisplaySymbol()));
+                    if (entity.isVisible()) {
+                        String type = "";
+                        if(entity instanceof PowerPotion)
+                            type = "P";
+                        else if(entity instanceof Potion)
+                            type = "L";
+
+                        ImageIcon icon = loadImageIcon(getImagePath(type == "" ? entity.getDisplaySymbol() : type));
                         if (icon != null) button.setIcon(icon);
                         break;
                     } else {
@@ -170,13 +173,25 @@ public class MapPanel extends JPanel {
         int col = pos.getCol();
         JButton button = gridButtons[row][col];
         Color originalColor = button.getBackground();
+        final boolean[] toggle = {true}; // to switch between colors
+        final int[] count = {0};         // how many ticks happened (max 10)
 
-        button.setBackground(color);
-        Timer timer = new Timer(300, e -> {
-            button.setBackground(originalColor);
-            ((Timer) e.getSource()).stop();
+        Timer timer = new Timer(100, e -> {
+            if (toggle[0]) {
+                button.setBackground(color);
+            } else {
+                button.setBackground(originalColor);
+            }
+            toggle[0] = !toggle[0];  // flip color
+            count[0]++;
+
+            if (count[0] >= 10) { // 5 full blinks = 10 color switches
+                ((Timer) e.getSource()).stop();
+                button.setBackground(originalColor); // ensure it ends on original color
+            }
         });
-        timer.setRepeats(false);
+
+        timer.setRepeats(true);
         timer.start();
     }
 }

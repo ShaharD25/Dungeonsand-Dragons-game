@@ -351,7 +351,7 @@ public class Main {
 //                System.out.println(enemy.getClass().getSimpleName() + " HP: " + enemy.getHealth() + "/100");
 
                 PopupPanel.showPopup("Enemy Encountered", "You encountered a" + enemy.getClass().getSimpleName()
-                + "\nEnemy HP: " + player.getHealth() + "/100" + "\nYour HP: " + player.getHealth() + "/100");
+                + "\nEnemy HP: " + enemy.getHealth() + "/50" + "\nYour HP: " + player.getHealth() + "/100");
 
                 CombatSystem.resolveCombat(player, enemy);
                 frame.getMapPanel().updateMap();
@@ -390,17 +390,22 @@ public class Main {
                 //System.out.println("\nYou found a potion!");
                 GameFrame frame = GameWorld.getInstance().getGameFrame();
                 frame.getMapPanel().flashCell(pos, Color.GREEN);
-                int oldHp = player.getHealth();
-                potion.interact(player);
+                if(potion instanceof PowerPotion)
+                {
+                    int oldPower = player.getPower();
+                    potion.interact(player);
+                    PopupPanel.showPopup("Power Potion Found",
+                            "You found a power potion!\nPower Before: " + oldPower +
+                                    "\nPower After: " + player.getPower());
+                }
+                else {
+                    int oldHp = player.getHealth();
+                    potion.interact(player);
+                    PopupPanel.showPopup("Life Potion Found",
+                            "You found a Life potion!\nHP Before: " + oldHp +
+                                    "\nHP After: " + player.getHealth());
+                }
                 frame.getMapPanel().updateMap();
-
-//                System.out.println("HP before potion: " + oldHp + "/100");
-//                System.out.println("HP after potion: " + player.getHealth() + "/100");
-
-                PopupPanel.showPopup("Potion Found",
-                        "You found a potion!\nHP Before: " + oldHp +
-                                "\nHP After: " + player.getHealth());
-
                 GameMap map = world.getMap();
                 map.removeEntity(pos, potion);
             }
