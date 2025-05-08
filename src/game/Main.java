@@ -610,7 +610,6 @@ public class Main {
      *
      * @return A random MagicElement (FIRE, ICE, LIGHTNING, or ACID)
      */
-    // Returns a random element.
     public static MagicElement getRandomElement()
     {
         Random rand = new Random();
@@ -724,6 +723,8 @@ public class Main {
             }
         }
     }
+
+
 }
 
 

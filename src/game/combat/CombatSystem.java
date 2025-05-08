@@ -49,7 +49,7 @@ public class CombatSystem {
 
             if (isCrit) {
                 PopupPanel.showPopup("Critical Hit!", "You landed a CRITICAL HIT!");
-                SoundPlayer.playSound("critical_hit.wav");
+                SoundPlayer.playSound("critical-hit.wav");
             }
 
             if (attacker instanceof MagicAttacker magic) {
@@ -57,13 +57,13 @@ public class CombatSystem {
                     defender.setHealth(defender.getHealth() - pc.getPower() * 2);
                 } else {
                     magic.castSpell(defender);
-                    SoundPlayer.playSound("critical_hit.wav");
+                    SoundPlayer.playSound("magic-spell.wav");
                 }
 
             } else if (attacker instanceof PhysicalAttacker physical) {
                 if (isCrit && attacker instanceof PlayerCharacter pc) {
                     defender.setHealth(defender.getHealth() - pc.getPower() * 2);
-                    SoundPlayer.playSound("critical_hit.wav");//
+                    SoundPlayer.playSound("critical-hit.wav");//
                 } else {
                     physical.attack(defender); //
                 }
@@ -75,7 +75,7 @@ public class CombatSystem {
             if (defender.isDead()) {
                 if (defender instanceof Enemy enemy) {
                     enemy.defeat();
-                    SoundPlayer.playSound("enemy_down.wav");
+                    SoundPlayer.playSound("kill.wav");
                     break;
                 }
             }

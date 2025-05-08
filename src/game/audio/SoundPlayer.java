@@ -5,7 +5,7 @@ import java.net.URL;
 public class SoundPlayer {
     public static void playSound(String fileName) {
         try {
-            URL url = SoundPlayer.class.getResource("/game/resources/sounds/" + fileName);
+            URL url = SoundPlayer.class.getResource("/game/resources/audio/" + fileName);
             if (url == null) {
                 System.err.println("Sound file not found: " + fileName);
                 return;
