@@ -16,11 +16,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.List;
+import game.gui.GameObserver;
+
 
 import static game.Main.calcDistance;
 import static game.gui.PopupPanel.quickPopup;
 
-public class MapPanel extends JPanel {
+public class MapPanel extends JPanel implements GameObserver {
+
     private JButton[][] gridButtons;
     private int mapSize;
 
@@ -39,7 +42,7 @@ public class MapPanel extends JPanel {
                 button.setEnabled(false);
                 button.setFocusable(false);
 
-                // תזוזה עם כפתור שמאלי
+
                 button.addActionListener(e -> {
                     GameWorld world = GameWorld.getInstance();
                     PlayerCharacter player = world.getPlayers().get(0);
@@ -53,7 +56,7 @@ public class MapPanel extends JPanel {
 
                 });
 
-                // אינטראקציה עם כפתור ימני
+
                 button.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mousePressed(MouseEvent e) {
@@ -194,4 +197,9 @@ public class MapPanel extends JPanel {
         timer.setRepeats(true);
         timer.start();
     }
+    @Override
+    public void update() {
+        repaint();
+    }
+
 }

@@ -47,13 +47,11 @@ public class GameMap {
 //            }
 //        }
 //    }
-    public boolean removeEntity(Position pos, GameEntity entity) {
+    public void removeEntity(Position pos, GameEntity entity) {
         List<GameEntity> entities = grid.get(pos);
         if (entities != null && entity != null && entities.remove(entity)) {
             if (entities.isEmpty()) grid.remove(pos);
-            return true;
         }
-        return false;
     }
 
 
@@ -65,7 +63,7 @@ public class GameMap {
      * @return List of GameEntities (can be empty but never null).
      */
     public List<GameEntity> getEntitiesAt(Position pos) {
-        return grid.getOrDefault(pos, Collections.emptyList());
+        return grid.computeIfAbsent(pos, k -> new ArrayList<>());
     }
 
     /**
@@ -102,6 +100,6 @@ public class GameMap {
     }
 
     public GameMap() {
-        this(10); // ברירת מחדל לגודל 10×10
+        this(10);
     }
 }

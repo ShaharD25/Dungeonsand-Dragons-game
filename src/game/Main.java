@@ -1,6 +1,7 @@
 //Artiom Bondar:332692730
 //Shahar Dahan: 207336355
 package game;
+import game.audio.SoundPlayer;
 import game.characters.*;
 import game.combat.CombatSystem;
 import game.combat.MagicElement;
@@ -121,13 +122,7 @@ public class Main {
         frame.getMapPanel().updateMap();
         frame.getStatusPanel().updateStatus(player);
 
-        // כל התנועה מתבצעת עכשיו דרך Key Bindings או כפתורי GUI אחרים
-        // לכן הלולאה כאן כבר לא צריכה להיות רצה ברצף
 
-        // אם אתה רוצה להוסיף אינטראקציה בלחיצה (לדוגמה, כפתור "Interact")
-        // תוכל לקשר כפתור כזה ל: handleInteractions(world, player, player.getPosition());
-
-        // במצב הנוכחי - המשחק "מתחיל", וכל התזוזה מתבצעת דרך GameController
         PopupPanel.showPopup("Game Started", "Use the arrow keys to move your character.\nClick the Interact button to interact.");
     }
 
@@ -283,22 +278,31 @@ public class Main {
         boolean hasWall = entitiesAtNewPos.stream().anyMatch(e -> e instanceof Wall);
 
         if (hasWall) {
+            SoundPlayer.playSound("hit.wav");
             PopupPanel.showPopup("Warning", "Blocked by wall!");
             return false;
         }
-
+        // Remove player from the current cell
         map.removeEntity(player.getPosition(), player);
+
+        // Set new position
         player.setPosition(newPos);
+
+        // Add player to the new cell
         map.addEntity(newPos, player);
 
-        // אינטראקציה עם מה שבתא
-        Main.handleInteractions(world, player, newPos);
 
-        // עדכון GUI
-        GameWorld.getInstance().getGameFrame().getMapPanel().updateMap();
-        GameWorld.getInstance().getGameFrame().getStatusPanel().updateStatus(player);
+        if (!entitiesAtNewPos.isEmpty()) {
+            Main.handleInteractions(world, player, newPos);
+        }
 
-        return true;
+
+        world.getGameFrame().getMapPanel().updateMap();
+        world.getGameFrame().getStatusPanel().updateStatus(player);
+        world.notifyObservers();
+
+         return true;
+
     }
 
 
@@ -340,7 +344,7 @@ public class Main {
         }
 
         for (GameEntity entity : entities) {
-            if (entity == null) continue;
+            if (entity == null || entity == player ) continue;
 
             // --- Enemy Interaction ---
             if (entity instanceof Enemy enemy) {
@@ -374,8 +378,10 @@ public class Main {
                             "You defeated the " + enemy.getClass().getSimpleName() +
                                     "!\nYour HP: " + player.getHealth() + "/100");
 
-                    GameMap map = world.getMap();
-                    map.removeEntity(pos, enemy);
+                    world.getMap().removeEntity(pos, enemy);
+
+                    // Notify that enemy was removed
+                   world.notifyObservers();
                 }
 
                 if (player.isDead()) {
@@ -394,6 +400,7 @@ public class Main {
                 {
                     int oldPower = player.getPower();
                     potion.interact(player);
+                    SoundPlayer.playSound("life-spell.wav");
                     PopupPanel.showPopup("Power Potion Found",
                             "You found a power potion!\nPower Before: " + oldPower +
                                     "\nPower After: " + player.getPower());
@@ -401,23 +408,26 @@ public class Main {
                 else {
                     int oldHp = player.getHealth();
                     potion.interact(player);
+                    SoundPlayer.playSound("life-spell.wav");
                     PopupPanel.showPopup("Life Potion Found",
                             "You found a Life potion!\nHP Before: " + oldHp +
                                     "\nHP After: " + player.getHealth());
                 }
-                frame.getMapPanel().updateMap();
-                GameMap map = world.getMap();
-                map.removeEntity(pos, potion);
+
+                world.getMap().removeEntity(pos, potion);
+
+                // Notify that potion was removed
+                world.notifyObservers();
             }
 
             // --- Treasure Interaction ---
             else if (entity instanceof Treasure treasure) {
-                //System.out.println("\nYou found a treasure!");
                 treasure.interact(player);
+                SoundPlayer.playSound("coin.wav");
                 PopupPanel.showPopup("Treasure Found", "You found a treasure!");
-                GameMap map = world.getMap();
-                map.removeEntity(pos, treasure);
-                GameWorld.getInstance().getGameFrame().getMapPanel().updateMap();
+                world.getMap().removeEntity(pos, treasure);
+                // Notify that treasure was removed
+                world.notifyObservers();
             }
 
             // --- Other Entities ---

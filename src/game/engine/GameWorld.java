@@ -11,6 +11,8 @@ import game.map.Position;
 
 import java.util.ArrayList;
 import java.util.List;
+import game.gui.GameObserver;
+
 
 /**
  * Singleton class that holds all core components of the game state:
@@ -25,7 +27,7 @@ public class GameWorld {
     private List<GameItem> items;
     private GameMap map;
     private static GameWorld instance;
-
+    private final List<GameObserver> observers = new ArrayList<>();
     private GameFrame gameFrame;
 
 
@@ -93,4 +95,14 @@ public class GameWorld {
     public GameFrame getGameFrame() {
         return gameFrame;
     }
+
+    public void addObserver(GameObserver observer) {
+        observers.add(observer);
+    }
+
+    public void notifyObservers() {
+        for (GameObserver observer : observers) {
+       }
+    }
+
 }
