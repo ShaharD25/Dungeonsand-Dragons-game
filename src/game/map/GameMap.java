@@ -1,6 +1,13 @@
 package game.map;
 
+import game.Main;
+import game.audio.SoundPlayer;
+import game.characters.Enemy;
+import game.characters.PlayerCharacter;
 import game.core.GameEntity;
+import game.engine.GameWorld;
+import game.gui.PopupPanel;
+import game.items.Wall;
 
 import java.util.*;
 
@@ -11,7 +18,7 @@ import java.util.*;
 public class GameMap {
     private Map<Position, List<GameEntity>> grid = new HashMap<>();
     public int entitySize = 0;
-
+    private int size;
     /**
      * Adds an entity to a specific position on the map.
      * If no entities exist at that position yet, a new list is created.
@@ -19,10 +26,7 @@ public class GameMap {
      * @param pos    The position to place the entity at.
      * @param entity The entity to be added.
      */
-//    public void addEntity(Position pos, GameEntity entity) {
-//        if (entity == null) return;
-//        grid.computeIfAbsent(pos, k -> new ArrayList<>()).add(entity);
-//    }
+
     public boolean addEntity(Position pos, GameEntity entity) {
         entitySize++;
         if (pos == null || entity == null) return false;
@@ -38,15 +42,7 @@ public class GameMap {
      * @param pos    The position from which to remove the entity.
      * @param entity The entity to be removed.
      */
-//    public void removeEntity(Position pos, GameEntity entity) {
-//        List<GameEntity> entities = grid.get(pos);
-//        if (entities != null) {
-//            entities.remove(entity);
-//            if (entities.isEmpty()) {
-//                grid.remove(pos);
-//            }
-//        }
-//    }
+
     public void removeEntity(Position pos, GameEntity entity) {
         List<GameEntity> entities = grid.get(pos);
         if (entities != null && entity != null && entities.remove(entity)) {
@@ -85,12 +81,13 @@ public class GameMap {
         return grid;
     }
 
-    public int getMapSize() {
+    public int getEntityMapSize() {
         return (int) Math.sqrt(entitySize);
     }
 
     // Add this constructor to support new GameMap(size)
     public GameMap(int size) {
+        this.size = size;
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
                 Position pos = new Position(row, col);
@@ -102,4 +99,43 @@ public class GameMap {
     public GameMap() {
         this(10);
     }
+
+    public void clear() {
+        grid.clear();
+    }
+
+    public boolean moveEntity(GameWorld world,Enemy enemy, Position start, Position nextStep) {
+        GameMap map = world.getMap();
+        int size = map.getMapSize();
+
+        if (nextStep.getRow() < 0 || nextStep.getRow() >= size || nextStep.getCol() < 0 || nextStep.getCol() >= size) {
+            PopupPanel.showPopup("Warning", "Cannot move outside the board!");
+            return false;
+        }
+
+        List<GameEntity> entitiesAtNewPos = map.getEntitiesAt(nextStep);
+
+        //should remove later if works
+        boolean hasWall = entitiesAtNewPos.stream().anyMatch(e -> e instanceof Wall);
+
+        if (hasWall) {
+            SoundPlayer.playSound("hit.wav");
+            PopupPanel.showPopup("Warning", "Blocked by wall!");
+            return false;
+        }
+
+        // Remove player from the current cell
+        map.removeEntity(start, enemy);
+
+        // Set new position
+        enemy.setPosition(nextStep);
+
+        // Add player to the new cell
+        map.addEntity(nextStep, enemy);
+
+        world.getGameFrame().getMapPanel().updateMap();
+        return true;
+    }
+
+    public int getMapSize(){return size;}
 }

@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import game.gui.GameObserver;
 
@@ -22,7 +23,7 @@ import game.gui.GameObserver;
 import static game.Main.calcDistance;
 import static game.gui.PopupPanel.quickPopup;
 
-public class MapPanel extends JPanel implements GameObserver {
+public class MapPanel extends JPanel {
 
     private JButton[][] gridButtons;
     private int mapSize;
@@ -42,7 +43,6 @@ public class MapPanel extends JPanel implements GameObserver {
                 button.setEnabled(false);
                 button.setFocusable(false);
 
-
                 button.addActionListener(e -> {
                     GameWorld world = GameWorld.getInstance();
                     PlayerCharacter player = world.getPlayers().get(0);
@@ -50,8 +50,37 @@ public class MapPanel extends JPanel implements GameObserver {
                     int fightRange = 1;
                     if(player instanceof RangedFighter)
                         fightRange = 2;
-                    if (Main.calcDistance(player.getPosition(), clickedPos) <= fightRange) {
-                        Main.moveToPosition(world, player, clickedPos);
+                    if(Main.calcDistance(player.getPosition(), clickedPos) == 1)
+                    {
+                        List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(clickedPos));
+                        if(entities.isEmpty())
+                            player.moveToPosition(world, clickedPos);
+                        else {
+                            for (GameEntity entity : entities) {
+                                if(entity == player)
+                                    continue;
+                                // --- Enemy Interaction ---
+                                if (entity instanceof Enemy) {
+                                    player.handleInteractions(world, clickedPos);
+                                    continue;
+                                }
+                                player.moveToPosition(world, clickedPos);
+                            }
+                        }
+
+
+                    }
+
+                    else if (Main.calcDistance(player.getPosition(), clickedPos) == fightRange) {
+                        List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(clickedPos));
+                        for (GameEntity entity : entities) {
+                            if (entity == null || entity == player ) continue;
+
+                            // --- Enemy Interaction ---
+                            if (entity instanceof Enemy enemy) {
+                                player.handleInteractions(world, clickedPos);
+                            }
+                        }
                     }
 
                 });
@@ -66,10 +95,6 @@ public class MapPanel extends JPanel implements GameObserver {
                             Position clickedPos = new Position(r, c);
                             if (Main.calcDistance(player.getPosition(), clickedPos) <= 2) {
                                 quickPopup(world, clickedPos);
-
-                                //Main.handleInteractions(world, player, clickedPos);
-                                //world.getGameFrame().getMapPanel().updateMap();
-                                //world.getGameFrame().getStatusPanel().updateStatus(player);
                             }
                         }
                     }
@@ -197,9 +222,6 @@ public class MapPanel extends JPanel implements GameObserver {
         timer.setRepeats(true);
         timer.start();
     }
-    @Override
-    public void update() {
-        repaint();
-    }
+
 
 }

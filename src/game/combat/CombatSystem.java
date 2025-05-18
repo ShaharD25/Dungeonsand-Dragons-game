@@ -45,8 +45,7 @@ public class CombatSystem {
       }
 
         do {
-            boolean isCrit = Math.random() < 0.2; // 20% סיכוי לקריטית
-
+            boolean isCrit = Math.random() < 0.2;
             if (isCrit) {
                 PopupPanel.showPopup("Critical Hit!", "You landed a CRITICAL HIT!");
                 SoundPlayer.playSound("critical-hit.wav");

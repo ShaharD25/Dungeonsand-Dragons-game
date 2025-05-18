@@ -5,12 +5,17 @@ import game.Main;
 import game.combat.*;
 import game.map.Position;
 
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+
 
 /**
  * Represents a Dragon enemy that can attack with both physical and magical abilities.
  * Implements Melee, Ranged, Physical and Magical combat behaviors.
  */
 public class Dragon extends Enemy implements MagicAttacker, PhysicalAttacker, MeleeFighter, RangedFighter {
+
     private MagicElement element;
     /**
      * Constructs a Dragon with a given loot value and position.
@@ -19,10 +24,11 @@ public class Dragon extends Enemy implements MagicAttacker, PhysicalAttacker, Me
      * @param loot     Treasure value dropped upon defeat
      * @param position The dragon's starting location
      */
-    public Dragon(int loot, Position position){
-        super(loot, position);
+    public Dragon(ScheduledExecutorService EXEC, AtomicBoolean gameRunning, ReentrantLock BOARD_LOCK, int loot, Position position){
+        super(EXEC,gameRunning,BOARD_LOCK,loot, position);
         this.element = Main.getRandomElement();
     }
+
 
 
     /**

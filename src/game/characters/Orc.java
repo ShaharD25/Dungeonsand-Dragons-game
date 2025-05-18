@@ -8,6 +8,10 @@ import game.combat.PhysicalAttacker;
 import game.map.Position;
 
 import java.util.Random;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Represents an Orc enemy character.
  * Orcs are melee physical attackers with resistance to magical damage.
@@ -21,8 +25,8 @@ public class Orc extends Enemy implements MeleeFighter, PhysicalAttacker {
      * @param loot     The amount of treasure dropped on defeat
      * @param position Initial position of the Orc on the board
      */
-    public Orc(int loot, Position position) {
-        super(loot, position);
+    public Orc(ScheduledExecutorService EXEC, AtomicBoolean gameRunning, ReentrantLock BOARD_LOCK, int loot, Position position) {
+        super(EXEC,gameRunning,BOARD_LOCK,loot, position);
         this.resistance = Math.random() * 0.5;
     }
 
@@ -92,4 +96,5 @@ public class Orc extends Enemy implements MeleeFighter, PhysicalAttacker {
             return getPower();
         }
     }
+
 }

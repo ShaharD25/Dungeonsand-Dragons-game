@@ -5,9 +5,14 @@ import game.combat.Combatant;
 import game.combat.MagicAttacker;
 import game.combat.MeleeFighter;
 import game.combat.PhysicalAttacker;
+import game.engine.GameWorld;
 import game.map.Position;
 
 import java.util.Random;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Represents a Goblin enemy character.
  * Goblins are agile melee physical attackers with a chance to dodge attacks.
@@ -22,10 +27,12 @@ public class Goblin extends Enemy implements MeleeFighter, PhysicalAttacker {
      * @param loot     The value of treasure dropped on defeat
      * @param position The goblin's initial location on the board
      */
-    public Goblin(int loot, Position position) {
-        super(loot, position);
+    public Goblin(ScheduledExecutorService EXEC, AtomicBoolean gameRunning, ReentrantLock BOARD_LOCK, int loot, Position position) {
+        super(EXEC,gameRunning,BOARD_LOCK,loot, position);
         this.agility = new Random().nextInt(81);
     }
+
+
 
     /**
      * Performs a close-range melee attack using this goblin's logic.
@@ -110,4 +117,6 @@ public class Goblin extends Enemy implements MeleeFighter, PhysicalAttacker {
     public void receiveDamage(int amount, Combatant source) {
         super.receiveDamage(amount, source);
     }
+
+
 }

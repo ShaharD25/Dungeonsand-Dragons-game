@@ -42,10 +42,11 @@ public class GameController {
             this.dCol = dCol;
         }
 
+        //try run with and without
         @Override
         public void actionPerformed(ActionEvent e) {
             Position newPos = new Position(player.getPosition().getRow() + dRow, player.getPosition().getCol() + dCol);
-            boolean moved = Main.moveToPosition(world, player, newPos);
+            boolean moved = player.moveToPosition(world, newPos);
             if (moved) {
                 Main.updateVisibility(world, player);
                 GameFrame frame = world.getGameFrame();

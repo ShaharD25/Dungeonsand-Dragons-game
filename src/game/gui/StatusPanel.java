@@ -7,7 +7,7 @@ import game.engine.GameWorld;
 
 
 
-public class StatusPanel extends JPanel implements GameObserver {
+public class StatusPanel extends JPanel {
 
     private final JLabel nameLabel = new JLabel("Name:");
     private final JLabel typeLabel = new JLabel("Type:");
@@ -29,12 +29,5 @@ public class StatusPanel extends JPanel implements GameObserver {
         healthLabel.setText("Health: " + player.getHealth());
         powerLabel.setText("Power: " + player.getPower());
     }
-    @Override
-    public void update() {
-        PlayerCharacter player = GameWorld.getInstance().getPlayers().get(0);
-        updateStatus(player);
-    }
-
-
 
 }
