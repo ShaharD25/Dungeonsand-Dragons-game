@@ -69,7 +69,7 @@ public class GameMap {
      * @return true if the position is within valid board boundaries.
      */
     public boolean isValidPosition(Position pos) {
-        return pos.getRow() >= 0 && pos.getCol() >= 0;
+        return pos.getRow() >= 0 && pos.getCol() >= 0 && pos.getRow() < size && pos.getCol() < size;
     }
 
     /**
@@ -138,4 +138,15 @@ public class GameMap {
     }
 
     public int getMapSize(){return size;}
+
+    public boolean isWall(Position pos)
+    {
+        List<GameEntity> entities = getEntitiesAt(pos);
+        for(GameEntity e : entities)
+        {
+            if(e instanceof Wall)
+                return true;
+        }
+        return false;
+    }
 }

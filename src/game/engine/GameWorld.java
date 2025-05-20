@@ -41,7 +41,7 @@ public class GameWorld {
 
     private GameFrame gameFrame;
     private static final AtomicBoolean gameRunning = new AtomicBoolean(true);
-    private static final ReentrantLock BOARD_LOCK = new ReentrantLock(true);
+    public static final ReentrantLock BOARD_LOCK = new ReentrantLock(true);
     private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
 
     /**
@@ -75,16 +75,11 @@ public class GameWorld {
         }
     }
 
-    //public void addPlayer(PlayerCharacter player) {players.add(player);}
-    //public void removePlayer(PlayerCharacter player) {players.remove(player);}
+
     public List<PlayerCharacter> getPlayers() { return players; }
     public List<Enemy> getEnemies() { return enemies; }
     public List<GameItem> getItems() { return items; }
-    //public void addItem(GameItem item) {items.add(item); }
 
-
-    //public void addEnemy(Enemy enemy){enemies.add(enemy);}
-    //public void removeEnemy(Enemy enemy){enemies.remove(enemy);}
 
     /**
      * Replaces the current game map with a new one.
@@ -100,12 +95,6 @@ public class GameWorld {
 
     public GameMap getMap() { return map; }
 
-
-    //public void addEntityToMap(Position pos, GameEntity entity) {map.addEntity(pos, entity);}
-    //public void removeEntityFromMap(Position pos, GameEntity entity) { map.removeEntity(pos, entity);}
-    //public List<GameEntity> getEntitiesAt(Position pos) { return map.getEntitiesAt(pos);}
-    //public boolean isValidPosition(Position pos) {return map.isValidPosition(pos);  }
-
     public void setGameFrame(GameFrame frame) {
         this.gameFrame = frame;
     }
@@ -118,7 +107,7 @@ public class GameWorld {
 
 
 
-    public void starGame(){
+    public void startGame(){
         gameRunning.set(true);
     }
 
@@ -209,7 +198,7 @@ public class GameWorld {
      */
     public GameEntity getNewMapEntity(Position pos) {
         Random rand = new Random();
-        int chance = rand.nextInt(100); // מספר בין 0 ל-99
+        int chance = rand.nextInt(100); //
 
         if (chance < 40) {
             return null; //
@@ -222,15 +211,13 @@ public class GameWorld {
                 default -> { return null; }
             }
         } else if (chance < 80) {
-            // 10% סיכוי לקיר
             return new Wall(pos);
         } else {
-            // 20% סיכוי לשיקוי
             int potionChance = rand.nextInt(100); // 0-99
             if (potionChance < 75) {
-                return new Potion(pos); // שיקוי חיים (75% מתוך ה-20%)
+                return new Potion(pos);
             } else {
-                return new PowerPotion(pos); // שיקוי עוצמה (25% מתוך ה-20%)
+                return new PowerPotion(pos);
             }
         }
     }
@@ -255,7 +242,6 @@ public class GameWorld {
             default -> new Warrior(name); // default
         };
 
-        // מיקום אקראי
         GameMap map = getMap();
         Position pos;
         do {

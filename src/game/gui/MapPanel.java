@@ -108,7 +108,7 @@ public class MapPanel extends JPanel {
         updateMap();
     }
 
-    public String getImagePath(String type) {
+    public static String getImagePath(String type) {
         String base = "/game/resources/images/";
         switch (type) {
             case "player":
@@ -145,6 +145,16 @@ public class MapPanel extends JPanel {
         }
     }
 
+    public GameEntity getEnemy(List<GameEntity> entities)
+    {
+        for(GameEntity entity : entities)
+        {
+            if(entity instanceof Enemy)
+                return entity;
+        }
+        return null;
+    }
+
     public void updateMap() {
         GameMap map = GameWorld.getInstance().getMap();
         Position playerPos = GameWorld.getInstance().getPlayers().get(0).getPosition();
@@ -168,17 +178,23 @@ public class MapPanel extends JPanel {
                         boolean isClose = calcDistance(playerPos, entity.getPosition()) <= 2;
                         entity.setVisible(isClose);
                     }
-                    else
-                        continue;
-
+                }
+                GameEntity e = getEnemy(entities);
+                if(e != null && e.isVisible())
+                {
+                    ImageIcon icon = loadImageIcon(getImagePath(e.getDisplaySymbol()));
+                    if (icon != null) button.setIcon(icon);
+                    continue;
+                }
+                for (GameEntity entity : entities) {
                     if (entity.isVisible()) {
                         String type = "";
                         if(entity instanceof PowerPotion)
-                            type = "P";
+                                type = "P";
                         else if(entity instanceof Potion)
-                            type = "L";
+                                type = "L";
 
-                        ImageIcon icon = loadImageIcon(getImagePath(type == "" ? entity.getDisplaySymbol() : type));
+                        ImageIcon icon = loadImageIcon(getImagePath(type.isEmpty() ? entity.getDisplaySymbol() : type));
                         if (icon != null) button.setIcon(icon);
                         break;
                     } else {

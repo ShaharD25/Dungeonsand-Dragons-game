@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static game.Main.restartGame;
+import static game.engine.GameWorld.BOARD_LOCK;
 
 /**
  * Abstract class representing a player-controlled character.
@@ -95,116 +96,125 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
      * If the player dies during combat, further interactions are skipped.
      */
     public void handleInteractions(GameWorld world, Position pos) {
-        List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(pos));
+        if(BOARD_LOCK.tryLock())
+        {
+            try{
+                List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(pos));
 
-        // For debugging: print all entities at this position
-        System.out.println("Entities at your current cell:");
-        for (GameEntity e : entities) {
-            if (e != null)
-                System.out.println(" - " + e.getClass().getSimpleName());
-        }
-
-        for (GameEntity entity : entities) {
-            if (entity == null || entity == this ) continue;
-
-            // --- Enemy Interaction ---
-            if (entity instanceof Enemy enemy) {
-                GameFrame frame = GameWorld.getInstance().getGameFrame();
-                frame.getMapPanel().flashCell(pos, Color.RED);
-
-                PopupPanel.showPopup("Enemy Encountered", "You encountered a" + enemy.getClass().getSimpleName()
-                        + "\nEnemy HP: " + enemy.getHealth() + "/50" + "\nYour HP: " + getHealth() + "/100");
-
-                CombatSystem.resolveCombat(this, enemy);
-
-
-                if (!enemy.isDead()) {
-                    PopupPanel.showPopup("After Combat",
-                            enemy.getClass().getSimpleName() + " survived!\n" +
-                                    "Enemy HP: " + enemy.getHealth() + "/50\n" +
-                                    "Your HP: " + getHealth() + "/100");
-
-                } else {
-                    PopupPanel.showPopup("Enemy Defeated",
-                            "You defeated the " + enemy.getClass().getSimpleName() +
-                                    "!\nYour HP: " + getHealth() + "/100");
-
-                    world.getMap().removeEntity(pos, enemy);
-                    world.getGameFrame().getMapPanel().updateMap();
-                    world.getGameFrame().getStatusPanel().updateStatus(this);
-                    // Notify that enemy was removed
-                    notifyObservers();
+                // For debugging: print all entities at this position
+                System.out.println("Entities at your current cell:");
+                for (GameEntity e : entities) {
+                    if (e != null)
+                        System.out.println(" - " + e.getClass().getSimpleName());
                 }
 
-                if (isDead()) {
-                    String message = "You have died in battle.";
-                    String title = "Game Over";
+                for (GameEntity entity : entities) {
+                    if (entity == null || entity == this ) continue;
 
-                    // Custom button texts
-                    String[] options = {"Restart Game", "Exit Game"};
+                    // --- Enemy Interaction ---
+                    if (entity instanceof Enemy enemy) {
+                        GameFrame frame = GameWorld.getInstance().getGameFrame();
+                        frame.getMapPanel().flashCell(pos, Color.RED);
 
-                    int choice = JOptionPane.showOptionDialog(
-                            null,
-                            message,
-                            title,
-                            JOptionPane.DEFAULT_OPTION,
-                            JOptionPane.INFORMATION_MESSAGE,
-                            null,
-                            options,
-                            options[0]
-                    );
+                        PopupPanel.showPopup("Enemy Encountered", "You encountered a" + enemy.getClass().getSimpleName()
+                                + "\nEnemy HP: " + enemy.getHealth() + "/50" + "\nYour HP: " + getHealth() + "/100");
 
-                    // Handle button click
-                    if (choice == 0) {
-                        world.closeGame();
-                        restartGame(world);
-                    } else if (choice == 1) {
-                        System.exit(0);
+                        CombatSystem.resolveCombat(this, enemy);
+
+
+                        if (!enemy.isDead()) {
+                            PopupPanel.showPopup("After Combat",
+                                    enemy.getClass().getSimpleName() + " survived!\n" +
+                                            "Enemy HP: " + enemy.getHealth() + "/50\n" +
+                                            "Your HP: " + getHealth() + "/100");
+
+                        } else {
+                            PopupPanel.showPopup("Enemy Defeated",
+                                    "You defeated the " + enemy.getClass().getSimpleName() +
+                                            "!\nYour HP: " + getHealth() + "/100");
+
+                            world.getMap().removeEntity(pos, enemy);
+                            world.getGameFrame().getMapPanel().updateMap();
+                            world.getGameFrame().getStatusPanel().updateStatus(this);
+                            // Notify that enemy was removed
+                            notifyObservers();
+                        }
+
+                        if (isDead()) {
+                            String message = "You have died in battle.";
+                            String title = "Game Over";
+
+                            // Custom button texts
+                            String[] options = {"Restart Game", "Exit Game"};
+
+                            int choice = JOptionPane.showOptionDialog(
+                                    null,
+                                    message,
+                                    title,
+                                    JOptionPane.DEFAULT_OPTION,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    null,
+                                    options,
+                                    options[0]
+                            );
+
+                            // Handle button click
+                            if (choice == 0) {
+                                world.closeGame();
+                                restartGame(world);
+                            } else if (choice == 1) {
+                                System.exit(0);
+                            }
+                            break;
+                        }
                     }
-                    break;
+
+                    // --- Potion Interaction ---
+                    else if (entity instanceof Potion potion) {
+                        //System.out.println("\nYou found a potion!");
+                        GameFrame frame = GameWorld.getInstance().getGameFrame();
+                        frame.getMapPanel().flashCell(pos, Color.GREEN);
+                        if(potion instanceof PowerPotion)
+                        {
+                            int oldPower = getPower();
+                            potion.interact(this);
+                            SoundPlayer.playSound("life-spell.wav");
+                            PopupPanel.showPopup("Power Potion Found",
+                                    "You found a power potion!\nPower Before: " + oldPower +
+                                            "\nPower After: " + getPower());
+                        }
+                        else {
+                            int oldHp = getHealth();
+                            potion.interact(this);
+                            SoundPlayer.playSound("life-spell.wav");
+                            PopupPanel.showPopup("Life Potion Found",
+                                    "You found a Life potion!\nHP Before: " + oldHp +
+                                            "\nHP After: " + getHealth());
+                        }
+
+                        world.getMap().removeEntity(pos, potion);
+
+                    }
+
+                    // --- Treasure Interaction ---
+                    else if (entity instanceof Treasure treasure) {
+                        treasure.interact(this);
+                        SoundPlayer.playSound("coin.wav");
+                        PopupPanel.showPopup("Treasure Found", "You found a treasure!");
+                        world.getMap().removeEntity(pos, treasure);
+                    }
+
+                    // --- Other Entities ---
+                    else {
+                        System.out.println("\nNo interaction possible with: " + entity.getClass().getSimpleName());
+                    }
                 }
             }
-
-            // --- Potion Interaction ---
-            else if (entity instanceof Potion potion) {
-                //System.out.println("\nYou found a potion!");
-                GameFrame frame = GameWorld.getInstance().getGameFrame();
-                frame.getMapPanel().flashCell(pos, Color.GREEN);
-                if(potion instanceof PowerPotion)
-                {
-                    int oldPower = getPower();
-                    potion.interact(this);
-                    SoundPlayer.playSound("life-spell.wav");
-                    PopupPanel.showPopup("Power Potion Found",
-                            "You found a power potion!\nPower Before: " + oldPower +
-                                    "\nPower After: " + getPower());
-                }
-                else {
-                    int oldHp = getHealth();
-                    potion.interact(this);
-                    SoundPlayer.playSound("life-spell.wav");
-                    PopupPanel.showPopup("Life Potion Found",
-                            "You found a Life potion!\nHP Before: " + oldHp +
-                                    "\nHP After: " + getHealth());
-                }
-
-                world.getMap().removeEntity(pos, potion);
-
-            }
-
-            // --- Treasure Interaction ---
-            else if (entity instanceof Treasure treasure) {
-                treasure.interact(this);
-                SoundPlayer.playSound("coin.wav");
-                PopupPanel.showPopup("Treasure Found", "You found a treasure!");
-                world.getMap().removeEntity(pos, treasure);
-            }
-
-            // --- Other Entities ---
-            else {
-                System.out.println("\nNo interaction possible with: " + entity.getClass().getSimpleName());
+            finally {
+                BOARD_LOCK.unlock();
             }
         }
+
     }
 
     /**
@@ -229,6 +239,8 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
      * @return true if a potion was used, false otherwise
      */
     public boolean usePotion() {
+        if(getHealth() == 100)
+            return false;
         for (GameItem item : inventory.getItems()) {
             if (item instanceof Potion && !(item instanceof PowerPotion)) {
                 ((Potion)item).interact(this);
@@ -287,5 +299,25 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
 
     public void clearObservers() {
         observers.clear();
+    }
+
+    public int getPowerPotionCount() {
+        int counter = 0;
+        for (GameItem i :inventory.getItems())
+        {
+            if(i instanceof PowerPotion)
+                counter++;
+        }
+        return counter;
+    }
+
+    public int getLifePotionCount() {
+        int counter = 0;
+        for (GameItem i :inventory.getItems())
+        {
+            if(i instanceof Potion && !(i instanceof PowerPotion))
+                counter++;
+        }
+        return counter;
     }
 }

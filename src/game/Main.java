@@ -25,7 +25,6 @@ enum GameAction {
 }
 public class Main {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
         GameWorld world = GameWorld.getInstance();// Singleton instance of the game world
         restartGame(world);
     }
@@ -37,6 +36,7 @@ public class Main {
         GameFrame gf = new GameFrame(player);
         world.setGameFrame(gf);
         new GameController(world, player, gf.getMapPanel(), gf.getMapPanel());
+        world.startGame();
     }
 
     /**
@@ -51,19 +51,8 @@ public class Main {
         world.setMap(new GameMap(size));
         world.setPlayer(); //
         world.prepareGame(size);
-
     }
 
-
-    public static void playGame(GameWorld world, PlayerCharacter player) {
-        updateVisibility(world, player);
-        GameFrame frame = GameWorld.getInstance().getGameFrame();
-        frame.getMapPanel().updateMap();
-        frame.getStatusPanel().updateStatus(player);
-
-
-        PopupPanel.showPopup("Game Started", "Use the arrow keys to move your character.\nClick the Interact button to interact.");
-    }
 
 
 
@@ -91,31 +80,7 @@ public class Main {
     public static int calcDistance(Position p1, Position p2) {
         return Math.abs(p1.getRow() - p2.getRow()) + Math.abs(p1.getCol() - p2.getCol());}
 
-    /**
-     * Handles one player's turn:
-     * - Moves the player and triggers interactions if successful
-     */
 
-
-    public static Position getDirectionFromUserAndCreatePosition(PlayerCharacter player, Scanner scanner) {
-        System.out.print("Choose direction (w = up, s = down, a = left, d = right): ");
-        String dir = scanner.nextLine().trim().toLowerCase();
-        int newRow = player.getPosition().getRow();
-        int newCol = player.getPosition().getCol();
-
-        switch (dir) {
-            case "w" -> newRow--;
-            case "s" -> newRow++;
-            case "a" -> newCol--;
-            case "d" -> newCol++;
-            default -> {
-                System.out.println("Invalid direction.");
-                return null;
-            }
-        }
-
-        return new Position(newRow, newCol);
-    }
 
 
 
@@ -162,106 +127,6 @@ public class Main {
         }
     }
 
-    /**
-     * Prints a 10x10 representation of the game board.
-     * - Player is always displayed using the first character of their name.
-     * - Other visible entities are shown based on their symbol.
-     * - Hidden entities are not displayed.
-     */
-    public static void printMap(GameWorld world) {
-        GameMap map = world.getMap();
-        PlayerCharacter player = world.getPlayers().get(0);
-        Position playerPos = player.getPosition();
-        int size = 10;
-
-        System.out.println("Current Map:");
-        for (int row = 0; row < size; row++) {
-            for (int col = 0; col < size; col++) {
-                Position pos = new Position(row, col);
-                List<GameEntity> entities = map.getEntitiesAt(pos);
-
-                boolean printed = false;
-
-                if (pos.equals(playerPos)) {
-                    // מציג את השחקן
-                    String symbol = player.getDisplaySymbol();
-                    System.out.print("[" + symbol.charAt(0) + "]");
-                    continue;
-                }
-
-                boolean hasVisibleEnemy = false;
-                boolean hasWall = false;
-                boolean hasVisibleTreasure = false;
-                boolean hasVisiblePotion = false;
-                boolean hasVisibleOther = false;
-
-                for (GameEntity entity : entities) {
-                    if (entity != null) {
-                        boolean isClose = calcDistance(playerPos, entity.getPosition()) <= 2;
-
-                        if (entity instanceof Enemy && (entity.isVisible() || isClose)) {
-                            hasVisibleEnemy = true;
-                        } else if (entity instanceof Wall && (entity.isVisible() || isClose)) {
-                            hasWall = true;
-                        } else if (entity instanceof Treasure && (entity.isVisible() || isClose)) {
-                            hasVisibleTreasure = true;
-                        } else if ((entity instanceof Potion || entity instanceof PowerPotion) && (entity.isVisible() || isClose)) {
-                            hasVisiblePotion = true;
-                        } else if (entity.isVisible() || isClose) {
-                            hasVisibleOther = true;
-                        }
-                    }
-                }
-
-                if (hasVisibleEnemy) {
-                    System.out.print("[E]");
-                    printed = true;
-                } else if (hasWall) {
-                    System.out.print("[|]");
-                    printed = true;
-                } else if (hasVisibleTreasure) {
-                    System.out.print("[T]");
-                    printed = true;
-                } else if (hasVisiblePotion) {
-                    System.out.print("[P]");
-                    printed = true;
-                } else if (hasVisibleOther) {
-                    System.out.print("[?]");
-                    printed = true;
-                }
-
-                if (!printed) {
-                    System.out.print("[ ]");
-                }
-            }
-            System.out.println();
-        }
-    }
-
-
-
-    /**
-     * Prompts the player to choose between moving and interacting.
-     * Repeats until a valid option (1 or 2) is selected.
-     *
-     * @param scanner Scanner to read input from player
-     * @return GameAction.MOVE or GameAction.INTERACT
-     */
-    public static GameAction getChoosenAction(Scanner scanner) {
-        while (true) {
-            System.out.print("Choose action: 1 = MOVE, 2 = INTERACT ");
-            String input = scanner.nextLine().trim();
-
-            switch (input) {
-                case "1":
-                    return GameAction.MOVE;
-                case "2":
-                    return GameAction.INTERACT;
-                default:
-                    System.out.println("Invalid input. Please enter 1 or 2.");
-            }
-        }
-    }
 }
 
 

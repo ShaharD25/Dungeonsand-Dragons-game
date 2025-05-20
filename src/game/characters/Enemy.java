@@ -42,7 +42,7 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
      */
     public Enemy(ScheduledExecutorService exec,AtomicBoolean running, ReentrantLock boardLock, int loot, Position position){
         super(position);
-        setHealth(new Random().nextInt(51));
+        setHealth(new Random().nextInt(50)+1);
         this.loot = loot;
         this.exec = exec;
         this.boardLock = boardLock;
@@ -122,7 +122,7 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
             world.getGameFrame().getStatusPanel().updateStatus(player);
             // Notify that enemy was removed
             player.removeObserver(this);
-            stopEnemy();
+            //stopEnemy();
         }
 
         if (player.isDead()) {
@@ -210,7 +210,7 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
 
         for (int[] d : directions) {
             Position next = new Position(pos.getRow() + d[0], pos.getCol() + d[1]);
-            if (map.isValidPosition(next)) {
+            if (map.isValidPosition(next) && !map.isWall(next)) {
                 neighbors.add(next);
             }
         }
@@ -247,7 +247,9 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
                     fightRange = 2;
                 if(Main.calcDistance(player.getPosition(), getPosition()) <= fightRange)
                 {
-                    fightPlayer(world, player);
+
+                            fightPlayer(world, player);
+
                 }
                 else {
                     moveToPlayer(world, player);
