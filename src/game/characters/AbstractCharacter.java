@@ -2,8 +2,10 @@
 //Shahar Dahan: 207336355
 package game.characters;
 import game.combat.Combatant;
+import game.combat.MagicElement;
 import game.core.GameEntity;
 
+import game.logging.LogManager;
 import game.map.Position;
 import java.util.Random;
 
@@ -23,6 +25,35 @@ public abstract class AbstractCharacter implements Combatant, GameEntity {
         this.health = 100;
         this.power = (int)(Math.random() * 11) + 4; //
 }
+
+
+    /**
+     * Randomly selects one of the four magic elements.
+     *
+     * @return A random MagicElement (FIRE, ICE, LIGHTNING, or ACID)
+     */
+    public static MagicElement getRandomElement()
+    {
+        Random rand = new Random();
+        int randInt = rand.nextInt(4);
+        MagicElement element;
+
+
+        switch (randInt) {
+            case 0: element = MagicElement.FIRE; break;
+            case 1: element = MagicElement.ICE; break;
+            case 2: element = MagicElement.LIGHTNING; break;
+            default: element = MagicElement.ACID;
+
+//            case 0: return MagicElement.FIRE;
+//            case 1: return MagicElement.ICE;
+//            case 2: return MagicElement.LIGHTNING;
+//            default: return MagicElement.ACID;
+        }
+        LogManager.log("Random magic element chosen: " + element);
+        return element;
+
+    }
 
     // Getters and setters for position
     public Position getPosition() {

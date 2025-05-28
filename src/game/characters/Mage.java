@@ -22,21 +22,7 @@ public class Mage extends PlayerCharacter implements MagicAttacker, RangedFighte
      */
     public Mage(String name){
         super(name);
-        int randomNumber = new Random().nextInt(4);
-        switch (randomNumber) {
-            case 0:
-                this.element = MagicElement.FIRE;
-                break;
-            case 1:
-                this.element = MagicElement.ICE;
-                break;
-            case 2:
-                this.element = MagicElement.LIGHTNING;
-                break;
-            case 3:
-                this.element = MagicElement.ACID;
-                break;
-        }
+        this.element = getRandomElement();
     }
 
     /**

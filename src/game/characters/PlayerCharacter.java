@@ -48,7 +48,8 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
 
 
 
-    public boolean moveToPosition(GameWorld world, Position newPos) {
+    public boolean moveToPosition(Position newPos) {
+        GameWorld world = GameWorld.getInstance();// Singleton instance of the game world
         GameMap map = world.getMap();
         int size = map.getMapSize();
 
@@ -76,7 +77,7 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
 
 
         if (!entitiesAtNewPos.isEmpty()) {
-            handleInteractions(world, newPos);
+            handleInteractions(newPos);
         }
 
 
@@ -95,7 +96,8 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
      * Interactions can be with Enemies, Potions, or Treasures.
      * If the player dies during combat, further interactions are skipped.
      */
-    public void handleInteractions(GameWorld world, Position pos) {
+    public void handleInteractions(Position pos) {
+        GameWorld world = GameWorld.getInstance();// Singleton instance of the game world
         if(BOARD_LOCK.tryLock())
         {
             try{
@@ -119,7 +121,7 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
                         PopupPanel.showPopup("Enemy Encountered", "You encountered a" + enemy.getClass().getSimpleName()
                                 + "\nEnemy HP: " + enemy.getHealth() + "/50" + "\nYour HP: " + getHealth() + "/100");
 
-                        CombatSystem.resolveCombat(this, enemy);
+                        CombatSystem.resolveCombat(this, enemy,true);
 
 
                         if (!enemy.isDead()) {
@@ -161,7 +163,7 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
                             // Handle button click
                             if (choice == 0) {
                                 world.closeGame();
-                                restartGame(world);
+                                restartGame();
                             } else if (choice == 1) {
                                 System.exit(0);
                             }

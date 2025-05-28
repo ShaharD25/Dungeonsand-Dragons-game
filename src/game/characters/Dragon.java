@@ -3,8 +3,10 @@
 package game.characters;
 import game.Main;
 import game.combat.*;
+import game.logging.LogManager;
 import game.map.Position;
 
+import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -26,10 +28,8 @@ public class Dragon extends Enemy implements MagicAttacker, PhysicalAttacker, Me
      */
     public Dragon(ScheduledExecutorService EXEC, AtomicBoolean gameRunning, ReentrantLock BOARD_LOCK, int loot, Position position){
         super(EXEC,gameRunning,BOARD_LOCK,loot, position);
-        this.element = Main.getRandomElement();
+        this.element = getRandomElement();
     }
-
-
 
     /**
      * Calculates and applies magic damage to a target.

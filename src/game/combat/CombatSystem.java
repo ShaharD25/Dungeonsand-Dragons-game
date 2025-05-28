@@ -2,6 +2,7 @@
 //Shahar Dahan: 207336355
 package game.combat;
 import game.audio.SoundPlayer;
+import game.logging.LogManager;
 import game.map.Position;
 import game.characters.*;
 import game.gui.PopupPanel;
@@ -24,51 +25,94 @@ public class CombatSystem {
      * @param attacker The entity initiating the attack
      * @param defender The entity being attacked
      */
-    public static void resolveCombat(Combatant attacker, Combatant defender) {
-      Position attackerPos = attacker.getPosition();
-      Position defenderPos = defender.getPosition();
+    public static void resolveCombat(Combatant attacker, Combatant defender, boolean isHero) {
+        Position attackerPos = attacker.getPosition();
+        Position defenderPos = defender.getPosition();
 
-        // Melee attack range validation
-        if (attacker instanceof MeleeFighter melee){
-          if (!melee.isInMeleeRange(attackerPos,defenderPos)){
-          System.out.println("You are not in melee range");
-          return;
-          }
-      }
-
+        boolean inRange = false;
         // Ranged attack range validation
-      if (attacker instanceof RangedFighter ranged){
-          if (!ranged.isInRange(attackerPos,defenderPos)){
-              System.out.println("You are not in range range");
-              return;
-          }
-      }
+        if (attacker instanceof RangedFighter ranged) {
+            if (!ranged.isInRange(attackerPos, defenderPos)) {
+                if (isHero)
+                    System.out.println("You are not in range range");
+                return;
+            }
+            inRange = true;
+        }
+
+        if(!inRange)
+        {
+            // Melee attack range validation
+            if (attacker instanceof MeleeFighter melee) {
+                if (!melee.isInMeleeRange(attackerPos, defenderPos)) {
+                    if (isHero)
+                        System.out.println("You are not in melee range");
+                    return;
+                }
+            }
+        }
+
+
 
         do {
             boolean isCrit = Math.random() < 0.2;
             if (isCrit) {
-                PopupPanel.showPopup("Critical Hit!", "You landed a CRITICAL HIT!");
+                if (isHero)
+                {
+                    PopupPanel.showPopup("Critical Hit!", "You landed a CRITICAL HIT!");
+                    LogManager.log("Critical Hit! You landed a CRITICAL HIT!");
+                }
+
+                else {
+                    PopupPanel.showPopup("Critical Hit!", "Enemy landed a CRITICAL HIT!");
+                    LogManager.log("Critical Hit! Enemy landed a CRITICAL HIT!");
+                }
                 SoundPlayer.playSound("critical-hit.wav");
             }
 
-            if (attacker instanceof MagicAttacker magic) {
-                if (isCrit && attacker instanceof PlayerCharacter pc) {
-                    defender.setHealth(defender.getHealth() - pc.getPower() * 2);
+            if(attacker instanceof Dragon dragon) {
+                if(!dragon.isInRange(attackerPos, defenderPos))
+                {
+                    if (isCrit) {
+                        defender.setHealth(defender.getHealth() - attacker.getPower() * 2);
+                        SoundPlayer.playSound("critical-hit.wav");
+                    } else {
+                        dragon.fightClose(defender); //
+                        SoundPlayer.playSound("critical-hit.wav"); //CHANGE to normal hit sound
+                    }
+                }
+                else {
+                    if (isCrit) {
+                        defender.setHealth(defender.getHealth() - attacker.getPower() * 2);
+                    } else {
+                        dragon.fightRanged(defender);
+                        SoundPlayer.playSound("magic-spell.wav");
+                    }
+                }
+            }
+
+            else {
+                if (attacker instanceof MagicAttacker magic) {
+                    if (isCrit) {
+                        defender.setHealth(defender.getHealth() - attacker.getPower() * 2);
+                    } else {
+                        magic.castSpell(defender);
+                        SoundPlayer.playSound("magic-spell.wav");
+                    }
+
+                } else if (attacker instanceof PhysicalAttacker physical) {
+                    if (isCrit) {
+                        defender.setHealth(defender.getHealth() - attacker.getPower() * 2);
+                        SoundPlayer.playSound("critical-hit.wav");//
+                    } else {
+                        physical.attack(defender); //
+                        SoundPlayer.playSound("critical-hit.wav"); //CHANGE to normal hit sound
+                    }
+
                 } else {
-                    magic.castSpell(defender);
-                    SoundPlayer.playSound("magic-spell.wav");
+                    System.out.println("Unknown attacker");
                 }
 
-            } else if (attacker instanceof PhysicalAttacker physical) {
-                if (isCrit && attacker instanceof PlayerCharacter pc) {
-                    defender.setHealth(defender.getHealth() - pc.getPower() * 2);
-                    SoundPlayer.playSound("critical-hit.wav");//
-                } else {
-                    physical.attack(defender); //
-                }
-
-            } else {
-                System.out.println("Unknown attacker");
             }
 
             if (defender.isDead()) {
@@ -82,32 +126,9 @@ public class CombatSystem {
             Combatant temp = defender;
             defender = attacker;
             attacker = temp;
+            isHero = !isHero;
         } while (!defender.isDead());
 
-
-
-//        do{
-//            // Perform the actual attack: either cast a spell or do a physical attack
-//            if (attacker instanceof MagicAttacker magic) {
-//                magic.castSpell(defender);
-//            } else if (attacker instanceof PhysicalAttacker physical) {
-//                physical.attack(defender);
-//            }
-//            else {
-//                System.out.println("Unknown attacker");
-//            }
-//            // After attack: check if the defender died
-//            if (defender.isDead())
-//            {
-//                if (defender instanceof Enemy enemy) // If the defender is an enemy, drop loot
-//                {
-//                    enemy.defeat();// Drop treasure on the map
-//                    break;
-//                }
-//            }
-//            Combatant temp = defender;
-//            defender = attacker;
-//            attacker = temp;
-//        }while(!defender.isDead());
     }
+
 }

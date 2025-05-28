@@ -79,7 +79,7 @@ public class GameController {
         @Override
         public void actionPerformed(ActionEvent e) {
             Position newPos = new Position(player.getPosition().getRow() + dRow, player.getPosition().getCol() + dCol);
-            boolean moved = player.moveToPosition(world, newPos);
+            boolean moved = player.moveToPosition(newPos);
             if (moved) {
                 Main.updateVisibility(world, player);
                 GameFrame frame = world.getGameFrame();

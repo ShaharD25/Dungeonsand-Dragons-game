@@ -20,8 +20,8 @@ import java.util.List;
 import game.gui.GameObserver;
 
 
-import static game.Main.calcDistance;
 import static game.gui.PopupPanel.quickPopup;
+import static game.map.GameMap.calcDistance;
 
 public class MapPanel extends JPanel {
 
@@ -50,35 +50,35 @@ public class MapPanel extends JPanel {
                     int fightRange = 1;
                     if(player instanceof RangedFighter)
                         fightRange = 2;
-                    if(Main.calcDistance(player.getPosition(), clickedPos) == 1)
+                    if(calcDistance(player.getPosition(), clickedPos) == 1)
                     {
                         List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(clickedPos));
                         if(entities.isEmpty())
-                            player.moveToPosition(world, clickedPos);
+                            player.moveToPosition(clickedPos);
                         else {
                             for (GameEntity entity : entities) {
                                 if(entity == player)
                                     continue;
                                 // --- Enemy Interaction ---
                                 if (entity instanceof Enemy) {
-                                    player.handleInteractions(world, clickedPos);
+                                    player.handleInteractions(clickedPos);
                                     continue;
                                 }
-                                player.moveToPosition(world, clickedPos);
+                                player.moveToPosition(clickedPos);
                             }
                         }
 
 
                     }
 
-                    else if (Main.calcDistance(player.getPosition(), clickedPos) == fightRange) {
+                    else if (calcDistance(player.getPosition(), clickedPos) == fightRange) {
                         List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(clickedPos));
                         for (GameEntity entity : entities) {
                             if (entity == null || entity == player ) continue;
 
                             // --- Enemy Interaction ---
                             if (entity instanceof Enemy enemy) {
-                                player.handleInteractions(world, clickedPos);
+                                player.handleInteractions(clickedPos);
                             }
                         }
                     }
@@ -93,7 +93,7 @@ public class MapPanel extends JPanel {
                             GameWorld world = GameWorld.getInstance();
                             PlayerCharacter player = world.getPlayers().get(0);
                             Position clickedPos = new Position(r, c);
-                            if (Main.calcDistance(player.getPosition(), clickedPos) <= 2) {
+                            if (calcDistance(player.getPosition(), clickedPos) <= 2) {
                                 quickPopup(world, clickedPos);
                             }
                         }

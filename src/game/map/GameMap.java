@@ -8,7 +8,9 @@ import game.core.GameEntity;
 import game.engine.GameWorld;
 import game.gui.PopupPanel;
 import game.items.Wall;
+import game.logging.LogManager;
 
+import javax.swing.*;
 import java.util.*;
 
 /**
@@ -148,5 +150,41 @@ public class GameMap {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Returns the Manhattan distance between two positions.
+     */
+    public static int calcDistance(Position p1, Position p2) {
+        //return Math.abs(p1.getRow() - p2.getRow()) + Math.abs(p1.getCol() - p2.getCol());
+        int dist = Math.abs(p1.getRow() - p2.getRow()) + Math.abs(p1.getCol() - p2.getCol());
+        LogManager.log("Calculated distance between " + p1 + " and " + p2 + " = " + dist);
+        return dist;
+    }
+
+
+
+
+
+    public static int getBoardSize() {
+        int size = 10;
+        while (true) {
+            String input = JOptionPane.showInputDialog(null,
+                    "Enter the board size (at least 10):", "Board Size", JOptionPane.QUESTION_MESSAGE);
+
+            if (input == null) {
+                JOptionPane.showMessageDialog(null, "No input provided. Defaulting to 10.");
+                break;
+            }
+
+            try {
+                size = Integer.parseInt(input);
+                if (size >= 10) break;
+                else JOptionPane.showMessageDialog(null, "Size must be at least 10.", "Invalid Input", JOptionPane.WARNING_MESSAGE);
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Please enter a valid number.", "Invalid Input", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+        return size;
     }
 }

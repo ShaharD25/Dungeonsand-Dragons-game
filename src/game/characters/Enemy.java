@@ -4,10 +4,12 @@ package game.characters;
 import game.Main;
 import game.combat.CombatSystem;
 import game.combat.RangedFighter;
+import game.engine.EnemyAction;
 import game.gui.GameFrame;
 import game.gui.GameObserver;
 import game.gui.PopupPanel;
 import game.items.Treasure;
+import game.logging.LogManager;
 import game.map.Position;
 import game.engine.GameWorld;
 import game.map.GameMap;
@@ -21,6 +23,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static game.map.GameMap.calcDistance;
 
 /**
  * Abstract class representing an enemy character on the map.
@@ -96,18 +100,25 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         exec.schedule(this,delay, TimeUnit.MILLISECONDS);
     }
 
-    public void fightPlayer(GameWorld world, PlayerCharacter player)
+    public void fightPlayer(PlayerCharacter player)
     {
+        GameWorld world = GameWorld.getInstance();
         GameFrame frame = GameWorld.getInstance().getGameFrame();
         frame.getMapPanel().flashCell(getPosition(), Color.RED);
 
         PopupPanel.showPopup("Enemy Encountered", "A " + getClass().getSimpleName() +" started a fight with you!"
                 + "\nEnemy HP: " + getHealth() + "/50" + "\nYour HP: " + player.getHealth() + "/100");
 
-        CombatSystem.resolveCombat(player, this);
+        LogManager.log("Enemy Encountered! A " + getClass().getSimpleName() +" started a fight with you!"
+                + "\nEnemy HP: " + getHealth() + "/50" + "\nYour HP: " + player.getHealth() + "/100");
+        CombatSystem.resolveCombat(this, player,false);
 
         if (!isDead()) {
             PopupPanel.showPopup("After Combat",
+                    getClass().getSimpleName() + " survived!\n" +
+                            "Enemy HP: " + getHealth() + "/50\n" +
+                            "Your HP: " + player.getHealth() + "/100");
+            LogManager.log("After Combat, " +
                     getClass().getSimpleName() + " survived!\n" +
                             "Enemy HP: " + getHealth() + "/50\n" +
                             "Your HP: " + player.getHealth() + "/100");
@@ -116,13 +127,15 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
             PopupPanel.showPopup("Enemy Defeated",
                     "You defeated the " + getClass().getSimpleName() +
                             "!\nYour HP: " + player.getHealth() + "/100");
+            LogManager.log("Enemy Defeated, " +
+                    "You defeated the " + getClass().getSimpleName() +
+                            "!\nYour HP: " + player.getHealth() + "/100");
 
             world.getMap().removeEntity(getPosition(), this);
             world.getGameFrame().getMapPanel().updateMap();
             world.getGameFrame().getStatusPanel().updateStatus(player);
             // Notify that enemy was removed
             player.removeObserver(this);
-            //stopEnemy();
         }
 
         if (player.isDead()) {
@@ -146,9 +159,9 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
             // Handle button click
             if (choice == 0) {
                 world.closeGame();
-                Main.restartGame(world);
+                Main.restartGame();
             } else if (choice == 1) {
-                System.exit(0);
+                Main.closeGame();
             }
         }
     }
@@ -218,7 +231,8 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         return neighbors;
     }
 
-    public void moveToPlayer(GameWorld world, PlayerCharacter player) {
+    public void moveToPlayer(PlayerCharacter player) {
+        GameWorld world = GameWorld.getInstance();
         Position start = getPosition();
         Position goal = player.getPosition();
 
@@ -245,14 +259,15 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
                 int fightRange = 1;
                 if(this instanceof RangedFighter)
                     fightRange = 2;
-                if(Main.calcDistance(player.getPosition(), getPosition()) <= fightRange)
+                if(calcDistance(player.getPosition(), getPosition()) <= fightRange)
                 {
-
-                            fightPlayer(world, player);
+                    //EnemyAction ea = new EnemyAction(this,player,true);
+                    fightPlayer(player);
 
                 }
                 else {
-                    moveToPlayer(world, player);
+                    moveToPlayer(player);
+                    //EnemyAction ea = new EnemyAction(this,player,false);
                 }
             }
             finally {
@@ -261,6 +276,25 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         }
 
     }
+
+//    public void takeAction() {
+//        if (boardLock.tryLock()) {
+//            try {
+//                GameWorld world = GameWorld.getInstance();
+//                PlayerCharacter player = world.getPlayers().get(0);
+//
+//                int fightRange = (this instanceof RangedFighter) ? 2 : 1;
+//                boolean inRange = Main.calcDistance(player.getPosition(), getPosition()) <= fightRange;
+//
+//                EnemyAction ea = new EnemyAction(this, player, inRange);
+//                world.enqueueEnemyAction(ea);
+//
+//            } finally {
+//                boardLock.unlock();
+//            }
+//        }
+//    }
+
 
 
     public void stopEnemy()

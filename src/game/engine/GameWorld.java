@@ -8,15 +8,14 @@ import game.items.GameItem;
 import game.items.Potion;
 import game.items.PowerPotion;
 import game.items.Wall;
+import game.logging.LogManager;
 import game.map.GameMap;
 import game.map.Position;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -41,8 +40,9 @@ public class GameWorld {
 
     private GameFrame gameFrame;
     private static final AtomicBoolean gameRunning = new AtomicBoolean(true);
-    public static final ReentrantLock BOARD_LOCK = new ReentrantLock(true);
-    private static final ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+    public static ReentrantLock BOARD_LOCK = new ReentrantLock(true);
+    private static ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+    private final BlockingQueue<EnemyAction> enemyActions = new LinkedBlockingQueue<>();
 
     /**
      * Private constructor – ensures only one instance can be created (Singleton pattern).
@@ -65,6 +65,13 @@ public class GameWorld {
     public static GameWorld getInstance() {
         if (instance == null)
             instance = new GameWorld();
+        return instance;
+    }
+
+    public static GameWorld getNewWorld() {
+        instance = new GameWorld();
+        BOARD_LOCK = new ReentrantLock(true);
+        EXEC = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
         return instance;
     }
 
@@ -104,11 +111,35 @@ public class GameWorld {
     }
 
 
+    private void startActionProcessor() {
+        Thread processor = new Thread(() -> {
+            while (isGameRunning()) {
+                try {
+                    EnemyAction action = enemyActions.take(); // מחכה לפעולה
+                    if (action.getEnemy().isDead() || action.getPlayer().isDead()) {
+                        continue; // skip action for dead characters
+                    }
+                    if (action.isFight()) {
+                        action.getEnemy().fightPlayer(action.getPlayer());
+                    } else {
+                        action.getEnemy().moveToPlayer(action.getPlayer());
+                    }
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        });
+        processor.start();
+    }
 
+    public void enqueueEnemyAction(EnemyAction action) {
+        enemyActions.offer(action);
+    }
 
 
     public void startGame(){
         gameRunning.set(true);
+        startActionProcessor();
     }
 
     public void stopGame() {
@@ -175,6 +206,7 @@ public class GameWorld {
                 if(p.distanceTo(players.get(0).getPosition()) == 0) {continue;}
 
                 GameEntity entity= getNewMapEntity(p);
+                LogManager.log("at position:" + "(" + row + "," + col + ")");
                 if (entity !=null){
                     entity.setPosition(p);
                     if(entity instanceof Enemy)
@@ -204,19 +236,25 @@ public class GameWorld {
             return null; //
         } else if (chance < 70) {
             int enemyType = rand.nextInt(3);
+            String[] enemiesStr = {"Dragon", "Orc", "Goblin"};
+            LogManager.log("an enemy was created: " + enemiesStr[enemyType]);
             switch (enemyType) {
                 case 0 -> { return new Dragon(EXEC,gameRunning, BOARD_LOCK,50, pos); }
                 case 1 -> { return new Orc(EXEC,gameRunning, BOARD_LOCK,50, pos); }
                 case 2 -> { return new Goblin(EXEC,gameRunning, BOARD_LOCK,50, pos); }
                 default -> { return null; }
             }
+
         } else if (chance < 80) {
+            LogManager.log("an wall was created");
             return new Wall(pos);
         } else {
             int potionChance = rand.nextInt(100); // 0-99
             if (potionChance < 75) {
+                LogManager.log("an life potion was created");
                 return new Potion(pos);
             } else {
+                LogManager.log("an power potion was created");
                 return new PowerPotion(pos);
             }
         }
@@ -241,7 +279,7 @@ public class GameWorld {
             case 2 -> new Archer(name);
             default -> new Warrior(name); // default
         };
-
+        LogManager.log("the chosen character is:" + options[choice]);
         GameMap map = getMap();
         Position pos;
         do {
@@ -249,7 +287,7 @@ public class GameWorld {
             int col = new Random().nextInt(map.getMapSize());
             pos = new Position(row, col);
         } while (!map.getEntitiesAt(pos).isEmpty());
-
+        LogManager.log("the chosen character is located at: " + "("+ pos.getRow() + "," + pos.getCol() +")");
         player.setPosition(pos);
         player.setVisible(true);
         map.addEntity(pos, player);

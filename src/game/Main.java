@@ -1,23 +1,22 @@
 //Artiom Bondar:332692730
 //Shahar Dahan: 207336355
 package game;
-import game.audio.SoundPlayer;
 import game.characters.*;
-import game.combat.CombatSystem;
-import game.combat.MagicElement;
 import game.controller.GameController;
 import game.core.GameEntity;
 import game.engine.GameWorld;
 import game.gui.GameFrame;
-import game.gui.PopupPanel;
-import game.items.*;
 import game.map.GameMap;
 import game.map.Position;
+import game.logging.LogManager;
 
-import javax.swing.*;
-import java.awt.*;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
+
+import static game.map.GameMap.calcDistance;
+import static game.map.GameMap.getBoardSize;
 
 // Enum for the possible actions the player can choose each turn
 enum GameAction {
@@ -25,13 +24,16 @@ enum GameAction {
 }
 public class Main {
     public static void main(String[] args) {
-        GameWorld world = GameWorld.getInstance();// Singleton instance of the game world
-        restartGame(world);
+        clearLogFile();
+        restartGame();
     }
 
-    public static void restartGame(GameWorld world)
+    public static void restartGame()
     {
-        initializeGame(world);// Set up the game map and player
+        //clearLogFile();
+        LogManager.log("Restart Game");
+        GameWorld world = GameWorld.getNewWorld();// Singleton instance of the game world
+        initializeGame();// Set up the game map and player
         PlayerCharacter player = world.getPlayers().get(0);// Get the player character
         GameFrame gf = new GameFrame(player);
         world.setGameFrame(gf);
@@ -46,8 +48,10 @@ public class Main {
      * - Prepares the map with entities
      * - Prompts for player name and class and places them on the map
      */
-    public static void initializeGame(GameWorld world) {
+    public static void initializeGame() {
         int size = getBoardSize(); //
+        LogManager.log("Initializing game with board size: " + size);
+        GameWorld world = GameWorld.getInstance();// Singleton instance of the game world
         world.setMap(new GameMap(size));
         world.setPlayer(); //
         world.prepareGame(size);
@@ -67,6 +71,7 @@ public class Main {
 
                     if (calcDistance(playerPos, entity.getPosition()) <= 2) {
                         entity.setVisible(true);
+                        LogManager.log(player.getName() + "sees " +entity.getClass().getSimpleName() + " at " + entity.getPosition());
                     }
                 }
             }
@@ -74,56 +79,19 @@ public class Main {
     }
 
 
-    /**
-     * Returns the Manhattan distance between two positions.
-     */
-    public static int calcDistance(Position p1, Position p2) {
-        return Math.abs(p1.getRow() - p2.getRow()) + Math.abs(p1.getCol() - p2.getCol());}
 
 
-
-
-
-
-    public static int getBoardSize() {
-        int size = 10;
-        while (true) {
-            String input = JOptionPane.showInputDialog(null,
-                    "Enter the board size (at least 10):", "Board Size", JOptionPane.QUESTION_MESSAGE);
-
-            if (input == null) {
-                JOptionPane.showMessageDialog(null, "No input provided. Defaulting to 10.");
-                break;
-            }
-
-            try {
-                size = Integer.parseInt(input);
-                if (size >= 10) break;
-                else JOptionPane.showMessageDialog(null, "Size must be at least 10.", "Invalid Input", JOptionPane.WARNING_MESSAGE);
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Please enter a valid number.", "Invalid Input", JOptionPane.WARNING_MESSAGE);
-            }
-        }
-        return size;
+    public static void closeGame() {
+        //clearLogFile();
+        LogManager.log("Exit Game");
+        LogManager.shutdown(); //
+        System.exit(0);        //
     }
 
-
-
-    /**
-     * Randomly selects one of the four magic elements.
-     *
-     * @return A random MagicElement (FIRE, ICE, LIGHTNING, or ACID)
-     */
-    public static MagicElement getRandomElement()
-    {
-        Random rand = new Random();
-        int randInt = rand.nextInt(4);
-
-        switch (randInt) {
-            case 0: return MagicElement.FIRE;
-            case 1: return MagicElement.ICE;
-            case 2: return MagicElement.LIGHTNING;
-            default: return MagicElement.ACID;
+    public static void clearLogFile() {
+        try (FileWriter writer = new FileWriter("game_log.txt", false)) {
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
