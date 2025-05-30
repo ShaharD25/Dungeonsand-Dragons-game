@@ -143,31 +143,34 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
                         }
 
                         if (isDead()) {
-                            String message = "You have died in battle.";
-                            String title = "Game Over";
-
-                            // Custom button texts
-                            String[] options = {"Restart Game", "Exit Game"};
-
-                            int choice = JOptionPane.showOptionDialog(
-                                    null,
-                                    message,
-                                    title,
-                                    JOptionPane.DEFAULT_OPTION,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    null,
-                                    options,
-                                    options[0]
-                            );
-
-                            // Handle button click
-                            if (choice == 0) {
-                                world.closeGame();
-                                restartGame();
-                            } else if (choice == 1) {
-                                System.exit(0);
-                            }
-                            break;
+                            JOptionPane.showMessageDialog(null, "You have died in battle.\nGame Over.");
+                            return;
+//                            String message = "You have died in battle.";
+//                            String title = "Game Over";
+//
+//                            // Custom button texts
+//                            String[] options = {"Restart Game", "Exit Game"};
+//
+//                            int choice = JOptionPane.showOptionDialog(
+//                                    null,
+//                                    message,
+//                                    title,
+//                                    JOptionPane.DEFAULT_OPTION,
+//                                    JOptionPane.INFORMATION_MESSAGE,
+//                                    null,
+//                                    options,
+//                                    options[0]
+//                            );
+//
+//                            // Handle button click
+//                            if (choice == 0)
+//                            {
+//                                world.closeGame();
+//                                restartGame();
+//                            } else if (choice == 1) {
+//                                System.exit(0);
+//                            }
+//                            break;
                         }
                     }
 

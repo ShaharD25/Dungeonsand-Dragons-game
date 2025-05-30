@@ -31,7 +31,7 @@ public class Main {
     public static void restartGame()
     {
         //clearLogFile();
-        LogManager.log("Restart Game");
+        //LogManager.log("Restart Game");
         GameWorld world = GameWorld.getNewWorld();// Singleton instance of the game world
         initializeGame();// Set up the game map and player
         PlayerCharacter player = world.getPlayers().get(0);// Get the player character
