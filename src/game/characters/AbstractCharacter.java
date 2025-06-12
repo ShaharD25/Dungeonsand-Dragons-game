@@ -23,7 +23,7 @@ public abstract class AbstractCharacter implements Combatant, GameEntity {
     public AbstractCharacter(Position position) {
         this.position = position;
         this.health = 100;
-        this.power = (int)(Math.random() * 11) + 4; //
+        this.power = (int)(Math.random() * 11) + 4; //4-14
 }
 
 

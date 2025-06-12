@@ -5,6 +5,8 @@ import game.Main;
 import game.combat.CombatSystem;
 import game.combat.RangedFighter;
 import game.engine.EnemyAction;
+import game.engine.EnemyPool;
+import game.factory.EnemyFactory;
 import game.gui.GameFrame;
 import game.gui.GameObserver;
 import game.gui.PopupPanel;
@@ -90,7 +92,18 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
 
     @Override
     public void run() {
-        if(!running.get() || getHealth() <= 0){return;}
+        if(!running.get()){ return; }
+
+        if (isDead()) {
+            GameWorld world = GameWorld.getInstance();
+
+            Enemy replacement = EnemyFactory.createRandomEnemy();
+            world.addEnemy(replacement);
+            world.getMap().addEntity(replacement.getPosition(), replacement);
+            EnemyPool.instance().scheduleEnemy(replacement);
+            return;
+        }
+
         if(active.get())
         {
             takeAction();
@@ -141,6 +154,7 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         if (player.isDead())
         {
             JOptionPane.showMessageDialog(null, "You have died in battle.\nGame Over.");
+            EnemyPool.instance().shutdown();
             System.exit(0);
 
 //            String message = "You have died in battle.";

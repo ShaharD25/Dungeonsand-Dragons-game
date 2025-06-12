@@ -6,6 +6,7 @@ import game.audio.SoundPlayer;
 import game.combat.CombatSystem;
 import game.core.GameEntity;
 import game.core.Inventory;
+import game.engine.EnemyPool;
 import game.engine.GameWorld;
 import game.gui.GameEventSource;
 import game.gui.GameFrame;
@@ -144,7 +145,8 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
 
                         if (isDead()) {
                             JOptionPane.showMessageDialog(null, "You have died in battle.\nGame Over.");
-                            return;
+                            EnemyPool.instance().shutdown();
+                            System.exit(0);
 //                            String message = "You have died in battle.";
 //                            String title = "Game Over";
 //

@@ -164,6 +164,13 @@ public class GameMap {
 
 
 
+    public List<GameEntity> getAllEntities() {
+        List<GameEntity> all = new ArrayList<>();
+        for (List<GameEntity> cellEntities : grid.values()) {
+            all.addAll(cellEntities);
+        }
+        return all;
+    }
 
 
     public static int getBoardSize() {

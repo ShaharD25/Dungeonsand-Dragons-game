@@ -1,8 +1,10 @@
 //Artiom Bondar:332692730
 //Shahar Dahan: 207336355
 package game.engine;
+import game.builder.PlayerBuilder;
 import game.characters.*;
 import game.core.GameEntity;
+import game.factory.EnemyFactory;
 import game.gui.GameFrame;
 import game.items.GameItem;
 import game.items.Potion;
@@ -12,16 +14,17 @@ import game.logging.LogManager;
 import game.map.GameMap;
 import game.map.Position;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import game.gui.GameObserver;
+import game.memento.GameMemento;
 
 import javax.swing.*;
+
+import static game.builder.PlayerBuilder.showDialog;
 
 
 /**
@@ -39,10 +42,13 @@ public class GameWorld {
     private static GameWorld instance;
 
     private GameFrame gameFrame;
-    private static final AtomicBoolean gameRunning = new AtomicBoolean(true);
+    public static final AtomicBoolean gameRunning = new AtomicBoolean(true);
     public static ReentrantLock BOARD_LOCK = new ReentrantLock(true);
-    private static ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+    public static ScheduledExecutorService EXEC = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
     private final BlockingQueue<EnemyAction> enemyActions = new LinkedBlockingQueue<>();
+
+    private ExecutorService enemyThreadPool;
+    private int maxEnemies;
 
     /**
      * Private constructor – ensures only one instance can be created (Singleton pattern).
@@ -86,7 +92,20 @@ public class GameWorld {
     public List<PlayerCharacter> getPlayers() { return players; }
     public List<Enemy> getEnemies() { return enemies; }
     public List<GameItem> getItems() { return items; }
+    public List<String> getMissingEnemies() {
+        Set<Class<?>> existingTypes = new HashSet<>();
+        for (Enemy e : enemies) {
+            existingTypes.add(e.getClass());
+        }
 
+        List<String> missingEnemies = new ArrayList<>();
+
+        if (!existingTypes.contains(Orc.class)) missingEnemies.add("Orc");
+        if (!existingTypes.contains(Goblin.class)) missingEnemies.add("Goblin");
+        if (!existingTypes.contains(Dragon.class)) missingEnemies.add("Dragon");
+
+        return missingEnemies;
+    }
 
     /**
      * Replaces the current game map with a new one.
@@ -168,6 +187,15 @@ public class GameWorld {
 
     }
 
+    public int getMaxEnemies() {
+        return maxEnemies;
+    }
+
+//    public int getCurrentEnemyCount() {
+//        return (int) map.getAllEntities().stream()
+//                .filter(e -> e instanceof Enemy && !((Enemy) e).isDead())
+//                .count();
+//    }
 
     public boolean isGameRunning() {
         return gameRunning.get();
@@ -184,8 +212,7 @@ public class GameWorld {
 
     public void addEnemy(Enemy enemy) {
         enemies.add(enemy);
-        Thread t = new Thread((Runnable) enemy); // start enemy in its own thread
-        t.start();
+        players.get(0).addObserver(enemy);
     }
 
     public void removeEnemy(Enemy enemy) {
@@ -209,15 +236,24 @@ public class GameWorld {
                 LogManager.log("at position:" + "(" + row + "," + col + ")");
                 if (entity !=null){
                     entity.setPosition(p);
-                    if(entity instanceof Enemy)
-                    {
-                        players.get(0).addObserver((Enemy)entity);
-                        EXEC.schedule((Enemy)entity,0, TimeUnit.MILLISECONDS);
-                    }
+//                    if(entity instanceof Enemy)
+//                    {
+//                        addEnemy((Enemy)entity);
+//                        EXEC.schedule((Enemy)entity,0, TimeUnit.MILLISECONDS);
+//                    }
                 }
                 getMap().addEntity(p, entity);
             }
         }
+        EnemyPool.init(size, size);
+        int amountOfEnemies = Math.max(1,Math.min(10, (int) (size * size * 0.03)));
+        for (int i = 0; i<amountOfEnemies; i++) {
+            Enemy enemy = EnemyFactory.createRandomEnemy();
+            addEnemy(enemy);
+            getMap().addEntity(enemy.getPosition(), enemy);
+            EnemyPool.instance().scheduleEnemy(enemy);
+        }
+
     }
 
 
@@ -228,24 +264,27 @@ public class GameWorld {
      * @param pos The position for the entity.
      * @return A new GameEntity or null (empty cell).
      */
+
     public GameEntity getNewMapEntity(Position pos) {
         Random rand = new Random();
-        int chance = rand.nextInt(100); //
+        int chance = rand.nextInt(70); //
 
         if (chance < 40) {
             return null; //
-        } else if (chance < 70) {
-            int enemyType = rand.nextInt(3);
-            String[] enemiesStr = {"Dragon", "Orc", "Goblin"};
-            LogManager.log("an enemy was created: " + enemiesStr[enemyType]);
-            switch (enemyType) {
-                case 0 -> { return new Dragon(EXEC,gameRunning, BOARD_LOCK,50, pos); }
-                case 1 -> { return new Orc(EXEC,gameRunning, BOARD_LOCK,50, pos); }
-                case 2 -> { return new Goblin(EXEC,gameRunning, BOARD_LOCK,50, pos); }
-                default -> { return null; }
-            }
-
-        } else if (chance < 80) {
+        }
+//        else if (chance < 70) {
+//            int enemyType = rand.nextInt(3);
+//            String[] enemiesStr = {"Dragon", "Orc", "Goblin"};
+//            LogManager.log("an enemy was created: " + enemiesStr[enemyType]);
+//            switch (enemyType) {
+//                case 0 -> { return new Dragon(EXEC,gameRunning, BOARD_LOCK,50, pos); }
+//                case 1 -> { return new Orc(EXEC,gameRunning, BOARD_LOCK,50, pos); }
+//                case 2 -> { return new Goblin(EXEC,gameRunning, BOARD_LOCK,50, pos); }
+//                default -> { return null; }
+//            }
+//
+//        }
+       else if (chance < 50) {
             LogManager.log("an wall was created");
             return new Wall(pos);
         } else {
@@ -261,25 +300,23 @@ public class GameWorld {
     }
 
     public void setPlayer() {
-        String name = JOptionPane.showInputDialog(null, "Enter your player name:", "Name", JOptionPane.QUESTION_MESSAGE);
-        if (name == null || name.trim().isEmpty()) {
-            name = "Player";
-        }
+        PlayerCharacter player = showDialog();
+        Position pos = getFreeRandomPosition();
+        LogManager.log("the chosen character is located at: " + "("+ pos.getRow() + "," + pos.getCol() +")");
+        player.setPosition(pos);
+        player.setVisible(true);
+        map.addEntity(pos, player);
+        players.add(player);
+    }
 
-        String[] options = {"Warrior", "Mage", "Archer"};
-        int choice = JOptionPane.showOptionDialog(null,
-                "Choose your character class:",
-                "Character Selection",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
-                null, options, options[0]);
+    public void loadState(GameMemento memento) {
+        this.players = memento.getPlayers();
+        this.enemies = memento.getEnemies();
+        this.items = memento.getItems();
+        this.map = memento.getMap();
+    }
 
-        PlayerCharacter player = switch (choice) {
-            case 0 -> new Warrior(name);
-            case 1 -> new Mage(name);
-            case 2 -> new Archer(name);
-            default -> new Warrior(name); // default
-        };
-        LogManager.log("the chosen character is:" + options[choice]);
+    public Position getFreeRandomPosition() {
         GameMap map = getMap();
         Position pos;
         do {
@@ -287,12 +324,17 @@ public class GameWorld {
             int col = new Random().nextInt(map.getMapSize());
             pos = new Position(row, col);
         } while (!map.getEntitiesAt(pos).isEmpty());
-        LogManager.log("the chosen character is located at: " + "("+ pos.getRow() + "," + pos.getCol() +")");
-        player.setPosition(pos);
-        player.setVisible(true);
-        map.addEntity(pos, player);
-        players.add(player);
+        return pos;
     }
+
+//    public GameMemento saveState() {
+//        List<PlayerCharacter> playerCopies = new ArrayList<>(players);
+//        List<Enemy> enemyCopies = new ArrayList<>(enemies);
+//        List<GameItem> itemCopies = new ArrayList<>(items);
+//        GameMap mapCopy = map.copy(); //
+//
+//        return new GameMemento(playerCopies, enemyCopies, itemCopies, mapCopy);
+//    }
 
 
 }
