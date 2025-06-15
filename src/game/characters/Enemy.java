@@ -1,19 +1,16 @@
 //Artiom Bondar:332692730
 //Shahar Dahan: 207336355
 package game.characters;
-import game.Main;
+
 import game.combat.CombatSystem;
 import game.combat.RangedFighter;
-import game.engine.EnemyAction;
 import game.engine.EnemyPool;
+import game.engine.GameWorld;
 import game.factory.EnemyFactory;
 import game.gui.GameFrame;
 import game.gui.GameObserver;
-import game.gui.PopupPanel;
 import game.items.Treasure;
 import game.logging.LogManager;
-import game.map.Position;
-import game.engine.GameWorld;
 import game.map.GameMap;
 import game.map.Position;
 
@@ -28,60 +25,32 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static game.map.GameMap.calcDistance;
 
-/**
- * Abstract class representing an enemy character on the map.
- * Enemies have loot value and drop a treasure upon defeat.
- */
 public abstract class Enemy extends AbstractCharacter implements Runnable, GameObserver {
     private int loot;
+    protected final AtomicBoolean running;
+    protected final ScheduledExecutorService exec;
+    protected final ReentrantLock boardLock;
     private AtomicBoolean active;
-    private final AtomicBoolean running;
-    private final ScheduledExecutorService exec;
-    private final ReentrantLock boardLock;
 
-    /**
-     * Constructs an enemy with given loot and a fixed position.
-     * Health is randomly initialized between 0–50.
-     *
-     * @param loot     The value of the treasure the enemy will drop
-     * @param position The position of the enemy on the map
-     */
-    public Enemy(ScheduledExecutorService exec,AtomicBoolean running, ReentrantLock boardLock, int loot, Position position){
+    public Enemy(ScheduledExecutorService exec, AtomicBoolean running, ReentrantLock boardLock, int loot, Position position) {
         super(position);
-        setHealth(new Random().nextInt(50)+1);
         this.loot = loot;
         this.exec = exec;
-        this.boardLock = boardLock;
         this.running = running;
-        active = new AtomicBoolean(false);
+        this.boardLock = boardLock;
+        this.active = new AtomicBoolean(false);
+        // Health is set separately via setInitialRandomHealth or builder
     }
 
-    /**
-     * Triggers upon the enemy's defeat.
-     * A Treasure is created and added to the map at the enemy's position.
-     */
-    public void defeat()
-    {
-        Position p = this.getPosition();
-        Treasure t = new Treasure(p,true,loot);
-        GameWorld.getInstance().getMap().addEntity(p,t);
+    // Used when we want randomized health on creation
+    public void setInitialRandomHealth() {
+        setHealth(new Random().nextInt(50) + 1);
     }
 
-    /**
-     * Returns the amount of treasure (loot points) this enemy is holding.
-     *
-     * @return The loot value of the enemy.
-     */
     public int getLoot() {
         return loot;
     }
 
-    /**
-     * Sets the loot value of the enemy.
-     * Only accepts non-negative values (0 or more).
-     *
-     * @param loot The new loot value to assign.
-     */
     public boolean setLoot(int loot) {
         if (loot >= 0) {
             this.loot = loot;
@@ -90,13 +59,24 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         return false;
     }
 
+    // Called when enemy dies: drops treasure on its position
+    public void defeat() {
+        Position p = this.getPosition();
+        Treasure t = new Treasure(p, true, loot);
+        GameWorld.getInstance().getMap().addEntity(p, t);
+    }
+
+    public void stopEnemy() {
+        running.set(false);
+        exec.shutdownNow();
+    }
+
     @Override
     public void run() {
-        if(!running.get()){ return; }
+        if (!running.get()) return;
 
         if (isDead()) {
             GameWorld world = GameWorld.getInstance();
-
             Enemy replacement = EnemyFactory.createRandomEnemy();
             world.addEnemy(replacement);
             world.getMap().addEntity(replacement.getPosition(), replacement);
@@ -104,86 +84,87 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
             return;
         }
 
-        if(active.get())
-        {
+        if (active.get()) {
             takeAction();
         }
-        Random random = new Random();
-        int delay = 500 + random.nextInt(1001); // 500–1500 ms
-        exec.schedule(this,delay, TimeUnit.MILLISECONDS);
+
+        int delay = 500 + new Random().nextInt(1001);
+        exec.schedule(this, delay, TimeUnit.MILLISECONDS);
     }
 
-    public void fightPlayer(PlayerCharacter player)
-    {
+    // Determines whether the player is near enough to activate the enemy
+    public void onPlayerMoved(Position pos) {
+        active.set(getPosition().distanceTo(pos) <= 2);
+    }
+
+    // Called when enemy is active and takes its turn
+    public void takeAction() {
+        if (boardLock.tryLock()) {
+            try {
+                GameWorld world = GameWorld.getInstance();
+                PlayerCharacter player = world.getPlayers().get(0);
+
+                int fightRange = (this instanceof RangedFighter) ? 2 : 1;
+
+                if (calcDistance(player.getPosition(), getPosition()) <= fightRange) {
+                    fightPlayer(player);
+                } else {
+                    moveToPlayer(player);
+                }
+            } finally {
+                boardLock.unlock();
+            }
+        }
+    }
+
+    // Handles combat logic between this enemy and the player
+    public void fightPlayer(PlayerCharacter player) {
         GameWorld world = GameWorld.getInstance();
         GameFrame frame = GameWorld.getInstance().getGameFrame();
         frame.getMapPanel().flashCell(getPosition(), Color.RED);
 
-        PopupPanel.showPopup("Enemy Encountered", "A " + getClass().getSimpleName() +" started a fight with you!"
+        LogManager.log("Enemy Encountered! A " + getClass().getSimpleName() + " started a fight with you!"
                 + "\nEnemy HP: " + getHealth() + "/50" + "\nYour HP: " + player.getHealth() + "/100");
 
-        LogManager.log("Enemy Encountered! A " + getClass().getSimpleName() +" started a fight with you!"
-                + "\nEnemy HP: " + getHealth() + "/50" + "\nYour HP: " + player.getHealth() + "/100");
-        CombatSystem.resolveCombat(this, player,false);
+        CombatSystem.resolveCombat(this, player, false);
 
         if (!isDead()) {
-            PopupPanel.showPopup("After Combat",
-                    getClass().getSimpleName() + " survived!\n" +
-                            "Enemy HP: " + getHealth() + "/50\n" +
-                            "Your HP: " + player.getHealth() + "/100");
-            LogManager.log("After Combat, " +
-                    getClass().getSimpleName() + " survived!\n" +
-                            "Enemy HP: " + getHealth() + "/50\n" +
-                            "Your HP: " + player.getHealth() + "/100");
-
+            LogManager.log("After Combat, " + getClass().getSimpleName() + " survived!\n" +
+                    "Enemy HP: " + getHealth() + "/50\n" +
+                    "Your HP: " + player.getHealth() + "/100");
         } else {
-            PopupPanel.showPopup("Enemy Defeated",
-                    "You defeated the " + getClass().getSimpleName() +
-                            "!\nYour HP: " + player.getHealth() + "/100");
-            LogManager.log("Enemy Defeated, " +
-                    "You defeated the " + getClass().getSimpleName() +
-                            "!\nYour HP: " + player.getHealth() + "/100");
+            LogManager.log("Enemy Defeated, You defeated the " + getClass().getSimpleName() +
+                    "!\nYour HP: " + player.getHealth() + "/100");
 
             world.getMap().removeEntity(getPosition(), this);
             world.getGameFrame().getMapPanel().updateMap();
             world.getGameFrame().getStatusPanel().updateStatus(player);
-            // Notify that enemy was removed
             player.removeObserver(this);
         }
 
-        if (player.isDead())
-        {
+        if (player.isDead()) {
             JOptionPane.showMessageDialog(null, "You have died in battle.\nGame Over.");
             EnemyPool.instance().shutdown();
             System.exit(0);
-
-//            String message = "You have died in battle.";
-//            String title = "Game Over";
-//
-//            // Custom button texts
-//            String[] options = {"Restart Game", "Exit Game"};
-//
-//            int choice = JOptionPane.showOptionDialog(
-//                    null,
-//                    message,
-//                    title,
-//                    JOptionPane.DEFAULT_OPTION,
-//                    JOptionPane.INFORMATION_MESSAGE,
-//                    null,
-//                    options,
-//                    options[0]
-//            );
-//
-//            // Handle button click
-//            if (choice == 0) {
-//                world.closeGame();
-//                Main.restartGame();
-//            } else if (choice == 1) {
-//                Main.closeGame();
-//            }
         }
     }
 
+    // Moves the enemy one step closer to the player
+    public void moveToPlayer(PlayerCharacter player) {
+        GameWorld world = GameWorld.getInstance();
+        Position start = getPosition();
+        Position goal = player.getPosition();
+
+        List<Position> path = findPath(world.getMap(), start, goal);
+        if (path != null && path.size() > 1) {
+            Position nextStep = path.get(1);
+            synchronized (world.getMap()) {
+                world.getMap().moveEntity(world, this, start, nextStep);
+            }
+        }
+    }
+
+    // Pathfinding algorithm: A* search (simplified)
     public static List<Position> findPath(GameMap map, Position start, Position goal) {
         Set<Position> closedSet = new HashSet<>();
         Map<Position, Position> cameFrom = new HashMap<>();
@@ -214,7 +195,6 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
                     cameFrom.put(neighbor, current);
                     gScore.put(neighbor, tentativeG);
                     fScore.put(neighbor, tentativeG + neighbor.distanceTo(goal));
-
                     if (!openSet.contains(neighbor)) {
                         openSet.add(neighbor);
                     }
@@ -222,9 +202,10 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
             }
         }
 
-        return null; // no path found
+        return null;
     }
 
+    // Reconstructs the path from start to goal
     private static List<Position> reconstructPath(Map<Position, Position> cameFrom, Position current) {
         List<Position> path = new LinkedList<>();
         path.add(current);
@@ -235,9 +216,10 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         return path;
     }
 
+    // Returns all 4 valid neighboring positions (up/down/left/right)
     private static List<Position> getNeighbors(Position pos, GameMap map) {
         List<Position> neighbors = new ArrayList<>();
-        int[][] directions = {{1,0},{-1,0},{0,1},{0,-1}};
+        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
         for (int[] d : directions) {
             Position next = new Position(pos.getRow() + d[0], pos.getCol() + d[1]);
@@ -249,79 +231,8 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         return neighbors;
     }
 
-    public void moveToPlayer(PlayerCharacter player) {
-        GameWorld world = GameWorld.getInstance();
-        Position start = getPosition();
-        Position goal = player.getPosition();
-
-        List<Position> path = findPath(world.getMap(), start, goal);
-
-        if (path != null && path.size() > 1) {
-            Position nextStep = path.get(1); // path[0] == current position
-
-            synchronized (world.getMap()) {
-                world.getMap().moveEntity(world,this, start, nextStep);
-            }
-        }
+    public String getOriginalName() {
+        return getClass().getSimpleName();
     }
 
-
-    public void takeAction()
-    {
-        if(boardLock.tryLock())
-        {
-            try{
-                GameWorld world = GameWorld.getInstance();
-                PlayerCharacter player = world.getPlayers().get(0);
-
-                int fightRange = 1;
-                if(this instanceof RangedFighter)
-                    fightRange = 2;
-                if(calcDistance(player.getPosition(), getPosition()) <= fightRange)
-                {
-                    //EnemyAction ea = new EnemyAction(this,player,true);
-                    fightPlayer(player);
-
-                }
-                else {
-                    moveToPlayer(player);
-                    //EnemyAction ea = new EnemyAction(this,player,false);
-                }
-            }
-            finally {
-                boardLock.unlock();
-            }
-        }
-
-    }
-
-//    public void takeAction() {
-//        if (boardLock.tryLock()) {
-//            try {
-//                GameWorld world = GameWorld.getInstance();
-//                PlayerCharacter player = world.getPlayers().get(0);
-//
-//                int fightRange = (this instanceof RangedFighter) ? 2 : 1;
-//                boolean inRange = Main.calcDistance(player.getPosition(), getPosition()) <= fightRange;
-//
-//                EnemyAction ea = new EnemyAction(this, player, inRange);
-//                world.enqueueEnemyAction(ea);
-//
-//            } finally {
-//                boardLock.unlock();
-//            }
-//        }
-//    }
-
-
-
-    public void stopEnemy()
-    {
-        running.set(false);
-        exec.shutdownNow();
-    }
-
-    public void onPlayerMoved(Position pos) {
-        active.set(getPosition().distanceTo(pos) <= 2);
-    }
 }

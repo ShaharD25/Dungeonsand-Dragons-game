@@ -327,4 +327,13 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
         }
         return counter;
     }
+
+
+    public String getImagePath() {
+        return "/game/resources/images/" + this.getClass().getSimpleName() + ".png";
+    }
+
+
+
+
 }

@@ -46,20 +46,22 @@ public class EnemyBuilder {
     }
 
     public EnemyBuilder setRandom() {
-        this.health = ThreadLocalRandom.current().nextInt(1,51);
-        this.power = ThreadLocalRandom.current().nextInt(4,15);
-        this.loot = ThreadLocalRandom.current().nextInt(10,51);
+        this.health = ThreadLocalRandom.current().nextInt(1, 51);
+        this.power = ThreadLocalRandom.current().nextInt(4, 15);
+        this.loot = ThreadLocalRandom.current().nextInt(10, 51);
         return this;
     }
 
-
     public Enemy build() {
         try {
-            // Look for a constructor with (int loot, Position pos)
-            Constructor<? extends Enemy> constructor = type.getConstructor(ScheduledExecutorService.class, AtomicBoolean.class, ReentrantLock.class, int.class, Position.class);
-            Enemy enemy = constructor.newInstance(EXEC,gameRunning, BOARD_LOCK,loot, position);
+            Constructor<? extends Enemy> constructor =
+                    type.getConstructor(ScheduledExecutorService.class, AtomicBoolean.class, ReentrantLock.class, int.class, Position.class);
+            Enemy enemy = constructor.newInstance(EXEC, gameRunning, BOARD_LOCK, loot, position);
+
+
             enemy.setHealth(health);
             enemy.setPower(power);
+
             return enemy;
         } catch (Exception e) {
             throw new RuntimeException("Failed to build enemy: " + type.getSimpleName(), e);

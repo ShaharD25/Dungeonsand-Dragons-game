@@ -1,6 +1,5 @@
 package game.gui;
 
-import game.Main;
 import game.characters.Enemy;
 import game.characters.PlayerCharacter;
 import game.combat.RangedFighter;
@@ -9,16 +8,14 @@ import game.engine.GameWorld;
 import game.items.*;
 import game.map.GameMap;
 import game.map.Position;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import game.gui.GameObserver;
-
 
 import static game.gui.PopupPanel.quickPopup;
 import static game.map.GameMap.calcDistance;
@@ -47,19 +44,15 @@ public class MapPanel extends JPanel {
                     GameWorld world = GameWorld.getInstance();
                     PlayerCharacter player = world.getPlayers().get(0);
                     Position clickedPos = new Position(r, c);
-                    int fightRange = 1;
-                    if(player instanceof RangedFighter)
-                        fightRange = 2;
-                    if(calcDistance(player.getPosition(), clickedPos) == 1)
-                    {
+                    int fightRange = (player instanceof RangedFighter) ? 2 : 1;
+
+                    if (calcDistance(player.getPosition(), clickedPos) == 1) {
                         List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(clickedPos));
-                        if(entities.isEmpty())
+                        if (entities.isEmpty()) {
                             player.moveToPosition(clickedPos);
-                        else {
+                        } else {
                             for (GameEntity entity : entities) {
-                                if(entity == player)
-                                    continue;
-                                // --- Enemy Interaction ---
+                                if (entity == player) continue;
                                 if (entity instanceof Enemy) {
                                     player.handleInteractions(clickedPos);
                                     continue;
@@ -68,23 +61,16 @@ public class MapPanel extends JPanel {
                             }
                         }
 
-
-                    }
-
-                    else if (calcDistance(player.getPosition(), clickedPos) == fightRange) {
+                    } else if (calcDistance(player.getPosition(), clickedPos) == fightRange) {
                         List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(clickedPos));
                         for (GameEntity entity : entities) {
-                            if (entity == null || entity == player ) continue;
-
-                            // --- Enemy Interaction ---
-                            if (entity instanceof Enemy enemy) {
+                            if (entity == null || entity == player) continue;
+                            if (entity instanceof Enemy) {
                                 player.handleInteractions(clickedPos);
                             }
                         }
                     }
-
                 });
-
 
                 button.addMouseListener(new MouseAdapter() {
                     @Override
@@ -110,10 +96,10 @@ public class MapPanel extends JPanel {
 
     public static String getImagePath(String type) {
         String base = "/game/resources/images/";
+
         switch (type) {
             case "player":
-                String playerType = GameWorld.getInstance().getPlayers().get(0).getClass().getSimpleName();
-                return base + playerType + ".png";
+                return getActualPlayerImagePath();
             case "D":
                 return base + "Dragon.png";
             case "G":
@@ -133,6 +119,24 @@ public class MapPanel extends JPanel {
         }
     }
 
+    private static String getActualPlayerImagePath() {
+        String base = "/game/resources/images/";
+        PlayerCharacter player = GameWorld.getInstance().getPlayers().get(0);
+
+        while (player.getClass().getSimpleName().contains("Decorator")) {
+            try {
+                java.lang.reflect.Method getWrappedMethod = player.getClass().getMethod("getWrapped");
+                player = (PlayerCharacter) getWrappedMethod.invoke(player);
+            } catch (Exception e) {
+                System.err.println("Failed to unwrap decorator: " + e.getMessage());
+                break;
+            }
+        }
+
+        String className = player.getClass().getSimpleName();
+        return base + className + ".png";
+    }
+
     private ImageIcon loadImageIcon(String path) {
         URL url = getClass().getResource(path);
         if (url != null) {
@@ -145,11 +149,9 @@ public class MapPanel extends JPanel {
         }
     }
 
-    public GameEntity getEnemy(List<GameEntity> entities)
-    {
-        for(GameEntity entity : entities)
-        {
-            if(entity instanceof Enemy)
+    public GameEntity getEnemy(List<GameEntity> entities) {
+        for (GameEntity entity : entities) {
+            if (entity instanceof Enemy)
                 return entity;
         }
         return null;
@@ -179,20 +181,21 @@ public class MapPanel extends JPanel {
                         entity.setVisible(isClose);
                     }
                 }
+
                 GameEntity e = getEnemy(entities);
-                if(e != null && e.isVisible())
-                {
+                if (e != null && e.isVisible()) {
                     ImageIcon icon = loadImageIcon(getImagePath(e.getDisplaySymbol()));
                     if (icon != null) button.setIcon(icon);
                     continue;
                 }
+
                 for (GameEntity entity : entities) {
                     if (entity.isVisible()) {
                         String type = "";
-                        if(entity instanceof PowerPotion)
-                                type = "P";
-                        else if(entity instanceof Potion)
-                                type = "L";
+                        if (entity instanceof PowerPotion)
+                            type = "P";
+                        else if (entity instanceof Potion)
+                            type = "L";
 
                         ImageIcon icon = loadImageIcon(getImagePath(type.isEmpty() ? entity.getDisplaySymbol() : type));
                         if (icon != null) button.setIcon(icon);
@@ -203,6 +206,7 @@ public class MapPanel extends JPanel {
                 }
             }
         }
+
         revalidate();
         repaint();
     }
@@ -211,14 +215,13 @@ public class MapPanel extends JPanel {
         return gridButtons[row][col];
     }
 
-    public void flashCell(Position pos, Color color)
-    {
+    public void flashCell(Position pos, Color color) {
         int row = pos.getRow();
         int col = pos.getCol();
         JButton button = gridButtons[row][col];
         Color originalColor = button.getBackground();
-        final boolean[] toggle = {true}; // to switch between colors
-        final int[] count = {0};         // how many ticks happened (max 10)
+        final boolean[] toggle = {true};
+        final int[] count = {0};
 
         Timer timer = new Timer(100, e -> {
             if (toggle[0]) {
@@ -226,18 +229,16 @@ public class MapPanel extends JPanel {
             } else {
                 button.setBackground(originalColor);
             }
-            toggle[0] = !toggle[0];  // flip color
+            toggle[0] = !toggle[0];
             count[0]++;
 
-            if (count[0] >= 10) { // 5 full blinks = 10 color switches
+            if (count[0] >= 10) {
                 ((Timer) e.getSource()).stop();
-                button.setBackground(originalColor); // ensure it ends on original color
+                button.setBackground(originalColor);
             }
         });
 
         timer.setRepeats(true);
         timer.start();
     }
-
-
 }
