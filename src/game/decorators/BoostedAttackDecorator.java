@@ -18,6 +18,10 @@ public class BoostedAttackDecorator extends PlayerDecorator implements PhysicalA
         this.bonusDamage = bonusDamage;
     }
 
+	public int getPowerBoost() {
+		return bonusDamage;
+	}
+    
     // Return boosted power
     @Override
     public int getPower() {
@@ -26,8 +30,11 @@ public class BoostedAttackDecorator extends PlayerDecorator implements PhysicalA
 
     // Physical attack logic
     @Override
-    public void attack(Combatant target) {
-        target.setHealth(target.getHealth() - getPower());
+    public boolean attack(Combatant target) {
+        if (wrapped instanceof PhysicalAttacker fighter) {
+            return fighter.attack(target);
+        }
+        return false;
     }
 
     // Melee range check
@@ -74,5 +81,9 @@ public class BoostedAttackDecorator extends PlayerDecorator implements PhysicalA
     public String getImagePath() {
         return wrapped.getImagePath();
     }
+
+
+
+
 
 }

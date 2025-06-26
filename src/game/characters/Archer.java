@@ -52,9 +52,16 @@ public class Archer extends PlayerCharacter implements PhysicalAttacker, RangedF
      *
      * @param target The combatant being attacked
      */
-    public void attack(Combatant target){
-        int damage = calculateDamage();
-        target.receiveDamage(damage,this);
+    public boolean attack(Combatant target) {
+        int damage = 0;
+        boolean isCrit = isCriticalHit();
+        if (isCrit) {
+            damage = getPower() * 2;
+        } else {
+            damage = getPower();
+        }
+        target.receiveDamage(damage, this);
+        return isCrit;
     }
 
     /**

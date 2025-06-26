@@ -44,9 +44,16 @@ public class Warrior extends PlayerCharacter implements PhysicalAttacker, MeleeF
      * Performs a physical attack on a target, using calculated damage.
      */
     @Override
-    public void attack(Combatant target) {
-        int damage = calculateDamage();
+    public boolean attack(Combatant target) {
+        int damage = 0;
+        boolean isCrit = isCriticalHit();
+        if (isCrit) {
+            damage = getPower() * 2;
+        } else {
+            damage = getPower();
+        }
         target.receiveDamage(damage, this);
+        return isCrit;
     }
 
     /**

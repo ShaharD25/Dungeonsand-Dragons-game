@@ -13,6 +13,8 @@ public class ExplodingEnemyDecorator extends EnemyDecorator {
         super(wrapped);
     }
 
+
+
     @Override
     public void defeat() {
         // Deal damage to nearby players before defeat
@@ -21,7 +23,7 @@ public class ExplodingEnemyDecorator extends EnemyDecorator {
 
         for (PlayerCharacter player : players) {
             if (player.getPosition().distanceTo(pos) <= 1) {
-                int damage = 10; // 20% of 50 max health
+                int damage = (int)(player.getHealth() * 0.02); // 20% of 50 max health
                 player.setHealth(player.getHealth() - damage);
                 System.out.println("[ExplodingEnemyDecorator] Explosion damaged nearby player for " + damage + " HP.");
             }

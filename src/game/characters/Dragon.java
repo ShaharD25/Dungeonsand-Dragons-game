@@ -72,8 +72,17 @@ public class Dragon extends Enemy implements MagicAttacker, PhysicalAttacker, Me
     /**
      * Not used directly in this implementation (replaced by melee or ranged logic).
      */
-    public void attack(Combatant target){}
-
+    public boolean attack(Combatant target) {
+        int damage = 0;
+        boolean isCrit = isCriticalHit();
+        if (isCrit) {
+            damage = getPower() * 2;
+        } else {
+            damage = getPower();
+        }
+        target.receiveDamage(damage, this);
+        return isCrit;
+    }
     /**
      * Determines if the current physical attack is a critical hit (10% chance).
      */

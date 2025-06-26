@@ -10,12 +10,12 @@ import java.awt.event.ActionEvent;
 
 public class GameController {
     private final GameWorld world;
-    private final PlayerCharacter player;
+    private PlayerCharacter player;
     private final JPanel panel;
 
-    public GameController(GameWorld world, PlayerCharacter player, JComponent component, JPanel panel) {
+    public GameController(GameWorld world, JComponent component, JPanel panel) {
         this.world = world;
-        this.player = player;
+        this.player = world.getPlayers().get(0);
         this.panel = panel;
         setupKeyBindings(component);
     }
@@ -78,6 +78,7 @@ public class GameController {
         //try run with and without
         @Override
         public void actionPerformed(ActionEvent e) {
+            player = world.getPlayers().get(0);
             Position newPos = new Position(player.getPosition().getRow() + dRow, player.getPosition().getCol() + dCol);
             boolean moved = player.moveToPosition(newPos);
             if (moved) {

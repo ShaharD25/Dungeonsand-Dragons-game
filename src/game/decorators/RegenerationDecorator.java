@@ -5,6 +5,7 @@ import game.characters.PlayerCharacter;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import game.engine.GameWorld;
 
 /**
  * Decorator that provides passive health regeneration.
@@ -32,6 +33,7 @@ public class RegenerationDecorator extends PlayerDecorator {
                     int newHp = Math.min(maxHp, currentHp + regenAmount);
                     wrapped.setHealth(newHp);
                     System.out.println("[Regeneration] HP regenerated to " + newHp);
+                    GameWorld.getInstance().getGameFrame().getStatusPanel().updateStatus((PlayerCharacter)wrapped);
                 }
             }
         });

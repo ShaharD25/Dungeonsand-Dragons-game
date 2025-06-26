@@ -26,6 +26,11 @@ public class Treasure extends GameItem implements Interactable{
         //this.value = new Random().nextInt(201)+100;
         this.collected = false;
     }
+    
+    public int getValue()
+    {
+    		return value;
+    }
 
     /**
      * When the player interacts with this treasure, they gain points.

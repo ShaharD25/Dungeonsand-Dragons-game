@@ -61,7 +61,7 @@ public class EnemyBuilder {
 
             enemy.setHealth(health);
             enemy.setPower(power);
-
+            
             return enemy;
         } catch (Exception e) {
             throw new RuntimeException("Failed to build enemy: " + type.getSimpleName(), e);

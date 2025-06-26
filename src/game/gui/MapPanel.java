@@ -159,7 +159,7 @@ public class MapPanel extends JPanel {
 
     public void updateMap() {
         GameMap map = GameWorld.getInstance().getMap();
-        Position playerPos = GameWorld.getInstance().getPlayers().get(0).getPosition();
+        Position playerPos = GameWorld.getInstance().getPlayers().get(0).getPosition(); 
 
         for (int row = 0; row < mapSize; row++) {
             for (int col = 0; col < mapSize; col++) {
@@ -168,6 +168,10 @@ public class MapPanel extends JPanel {
                 JButton button = gridButtons[row][col];
                 button.setIcon(null);
                 button.setEnabled(true);
+                if(entities.isEmpty())
+                {
+                    button.setText("");
+                }
 
                 if (pos.equals(playerPos)) {
                     ImageIcon playerIcon = loadImageIcon(getImagePath("player"));

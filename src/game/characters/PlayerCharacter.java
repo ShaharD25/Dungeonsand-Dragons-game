@@ -47,6 +47,10 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
     }
 
 
+    	public String getClassSimpleName()
+    	{
+    		return getClass().getSimpleName();
+    	}
 
 
     public boolean moveToPosition(Position newPos) {
@@ -67,6 +71,9 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
             PopupPanel.showPopup("Warning", "Blocked by wall!");
             return false;
         }
+        
+        boolean isemptyNext = entitiesAtNewPos.isEmpty();
+        
         // Remove player from the current cell
         map.removeEntity(getPosition(), this);
 
@@ -77,7 +84,7 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
         map.addEntity(newPos, this);
 
 
-        if (!entitiesAtNewPos.isEmpty()) {
+        if (!isemptyNext) {
             handleInteractions(newPos);
         }
 
@@ -147,32 +154,6 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
                             JOptionPane.showMessageDialog(null, "You have died in battle.\nGame Over.");
                             EnemyPool.instance().shutdown();
                             System.exit(0);
-//                            String message = "You have died in battle.";
-//                            String title = "Game Over";
-//
-//                            // Custom button texts
-//                            String[] options = {"Restart Game", "Exit Game"};
-//
-//                            int choice = JOptionPane.showOptionDialog(
-//                                    null,
-//                                    message,
-//                                    title,
-//                                    JOptionPane.DEFAULT_OPTION,
-//                                    JOptionPane.INFORMATION_MESSAGE,
-//                                    null,
-//                                    options,
-//                                    options[0]
-//                            );
-//
-//                            // Handle button click
-//                            if (choice == 0)
-//                            {
-//                                world.closeGame();
-//                                restartGame();
-//                            } else if (choice == 1) {
-//                                System.exit(0);
-//                            }
-//                            break;
                         }
                     }
 
@@ -230,6 +211,8 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
     public String getName() {return name;}
 
 
+    public Inventory getInventory() {return inventory;}
+    
     /**
      * Adds a GameItem to the player's inventory.
      * @param item the item to add
@@ -296,18 +279,22 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
     public void addObserver(GameObserver observer) {
         observers.add(observer);
     }
+    
     public void removeObserver(GameObserver observer){observers.remove(observer);}
 
+    
     public void notifyObservers() {
         for (GameObserver observer : observers) {
             observer.onPlayerMoved(getPosition());
         }
     }
 
+    
     public void clearObservers() {
         observers.clear();
     }
 
+    
     public int getPowerPotionCount() {
         int counter = 0;
         for (GameItem i :inventory.getItems())
@@ -318,6 +305,7 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
         return counter;
     }
 
+    
     public int getLifePotionCount() {
         int counter = 0;
         for (GameItem i :inventory.getItems())
@@ -329,6 +317,7 @@ public abstract class PlayerCharacter extends AbstractCharacter implements GameE
     }
 
 
+    
     public String getImagePath() {
         return "/game/resources/images/" + this.getClass().getSimpleName() + ".png";
     }

@@ -4,6 +4,8 @@ package game.characters;
 
 import game.combat.CombatSystem;
 import game.combat.RangedFighter;
+import game.core.GameEntity;
+import game.decorators.EnemyDecorator;
 import game.engine.EnemyPool;
 import game.engine.GameWorld;
 import game.factory.EnemyFactory;
@@ -30,8 +32,10 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
     protected final AtomicBoolean running;
     protected final ScheduledExecutorService exec;
     protected final ReentrantLock boardLock;
-    private AtomicBoolean active;
-
+    public AtomicBoolean active;
+    private volatile boolean replacementSpawned = false;
+    private volatile boolean stopped = false;
+    
     public Enemy(ScheduledExecutorService exec, AtomicBoolean running, ReentrantLock boardLock, int loot, Position position) {
         super(position);
         this.loot = loot;
@@ -42,6 +46,22 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         // Health is set separately via setInitialRandomHealth or builder
     }
 
+    public ScheduledExecutorService getExec()
+    {
+    		return exec;
+    }
+    
+    public AtomicBoolean getRunning()
+    {
+    		return running;
+    }
+    
+    public ReentrantLock getBoardLock()
+    {
+    		return boardLock;
+    }
+    
+
     // Used when we want randomized health on creation
     public void setInitialRandomHealth() {
         setHealth(new Random().nextInt(50) + 1);
@@ -51,6 +71,7 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         return loot;
     }
 
+    
     public boolean setLoot(int loot) {
         if (loot >= 0) {
             this.loot = loot;
@@ -64,8 +85,10 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         Position p = this.getPosition();
         Treasure t = new Treasure(p, true, loot);
         GameWorld.getInstance().getMap().addEntity(p, t);
+
     }
 
+    
     public void stopEnemy() {
         running.set(false);
         exec.shutdownNow();
@@ -73,17 +96,22 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
 
     @Override
     public void run() {
-        if (!running.get()) return;
+        if (!running.get() || stopped) return;
 
         if (isDead()) {
-            GameWorld world = GameWorld.getInstance();
-            Enemy replacement = EnemyFactory.createRandomEnemy();
-            world.addEnemy(replacement);
-            world.getMap().addEntity(replacement.getPosition(), replacement);
-            EnemyPool.instance().scheduleEnemy(replacement);
-            return;
+        		// Only spawn replacement once
+            if (!replacementSpawned) {
+                replacementSpawned = true;
+                stopped = true; // Stop this enemy's thread
+                
+                GameWorld world = GameWorld.getInstance();
+                Enemy replacement = EnemyFactory.createRandomEnemy();
+                world.addEnemy(replacement);
+                EnemyPool.instance().scheduleEnemy(replacement);
+            }
+            return; // Don't reschedule - this enemy is done
         }
-
+        
         if (active.get()) {
             takeAction();
         }
@@ -91,6 +119,7 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         int delay = 500 + new Random().nextInt(1001);
         exec.schedule(this, delay, TimeUnit.MILLISECONDS);
     }
+    
 
     // Determines whether the player is near enough to activate the enemy
     public void onPlayerMoved(Position pos) {
@@ -126,17 +155,40 @@ public abstract class Enemy extends AbstractCharacter implements Runnable, GameO
         LogManager.log("Enemy Encountered! A " + getClass().getSimpleName() + " started a fight with you!"
                 + "\nEnemy HP: " + getHealth() + "/50" + "\nYour HP: " + player.getHealth() + "/100");
 
-        CombatSystem.resolveCombat(this, player, false);
+        Enemy decoratedEnemy = this;
+        List<GameEntity> entitiesAtPos = world.getMap().getEntitiesAt(getPosition());
+        for(GameEntity ge : entitiesAtPos)
+        {
+        		if(ge instanceof EnemyDecorator decEnemy)
+        		{
+        			if(decEnemy.getWrapped() == this)
+        				decoratedEnemy = decEnemy;
+        		}
+        }
+              
+        
+        CombatSystem.resolveCombat(decoratedEnemy, player, false);
 
         if (!isDead()) {
-            LogManager.log("After Combat, " + getClass().getSimpleName() + " survived!\n" +
-                    "Enemy HP: " + getHealth() + "/50\n" +
-                    "Your HP: " + player.getHealth() + "/100");
+        		if(player.isDead())
+        		{
+        			LogManager.log("After Combat, " + getClass().getSimpleName() + " survived!\n" +
+                            "Enemy HP: " + getHealth() + "/50\n" +
+                            "Your HP: " + player.getHealth() + "/100");
+        		}           
         } else {
             LogManager.log("Enemy Defeated, You defeated the " + getClass().getSimpleName() +
                     "!\nYour HP: " + player.getHealth() + "/100");
+            
+
+
+            if(decoratedEnemy != null) {
+	            	world.getMap().removeEntity(getPosition(), decoratedEnemy);
+	        		world.removeEnemy(decoratedEnemy);
+            }
 
             world.getMap().removeEntity(getPosition(), this);
+            world.removeEnemy(this);
             world.getGameFrame().getMapPanel().updateMap();
             world.getGameFrame().getStatusPanel().updateStatus(player);
             player.removeObserver(this);

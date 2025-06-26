@@ -78,7 +78,7 @@ public class StatusPanel extends JPanel {
 
     public void updateStatus(PlayerCharacter player) {
         nameLabel.setText("Name: " + player.getName());
-        typeLabel.setText("Type: " + player.getClass().getSimpleName());
+        typeLabel.setText("Type: " + player.getClassSimpleName());
         healthLabel.setText("Health: " + player.getHealth());
         powerLabel.setText("Power: " + player.getPower());
 

@@ -46,9 +46,16 @@ public class Orc extends Enemy implements MeleeFighter, PhysicalAttacker {
      * Performs a physical attack, calculating damage (with critical chance).
      */
     @Override
-    public void attack(Combatant target) {
-        int damage = calculateDamage();
+    public boolean attack(Combatant target) {
+        int damage = 0;
+        boolean isCrit = isCriticalHit();
+        if (isCrit) {
+            damage = getPower() * 2;
+        } else {
+            damage = getPower();
+        }
         target.receiveDamage(damage, this);
+        return isCrit;
     }
 
     /**

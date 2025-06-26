@@ -1,10 +1,9 @@
 package game.map;
 
-import game.Main;
 import game.audio.SoundPlayer;
 import game.characters.Enemy;
-import game.characters.PlayerCharacter;
 import game.core.GameEntity;
+import game.decorators.EnemyDecorator;
 import game.engine.GameWorld;
 import game.gui.PopupPanel;
 import game.items.Wall;
@@ -47,7 +46,8 @@ public class GameMap {
 
     public void removeEntity(Position pos, GameEntity entity) {
         List<GameEntity> entities = grid.get(pos);
-        if (entities != null && entity != null && entities.remove(entity)) {
+        if (entities != null && entity != null) {
+            entities.remove(entity);
             if (entities.isEmpty()) grid.remove(pos);
         }
     }
@@ -125,7 +125,27 @@ public class GameMap {
             PopupPanel.showPopup("Warning", "Blocked by wall!");
             return false;
         }
-
+        
+        Enemy decoratedEnemy = null;
+        List<GameEntity> entitiesAtPos = map.getEntitiesAt(start);
+        for(GameEntity ge : entitiesAtPos)
+        {
+        		if(ge instanceof EnemyDecorator decEnemy)
+        		{
+        			if(decEnemy.getWrapped() == enemy)
+        				decoratedEnemy = decEnemy;
+        		}
+        }
+        
+        if(decoratedEnemy != null)
+        {
+        		map.removeEntity(start, decoratedEnemy);
+        		decoratedEnemy.setPosition(nextStep);
+        		map.addEntity(nextStep, decoratedEnemy);
+        		world.removeEnemy(decoratedEnemy);
+        }
+        		
+        
         // Remove player from the current cell
         map.removeEntity(start, enemy);
 
@@ -134,7 +154,8 @@ public class GameMap {
 
         // Add player to the new cell
         map.addEntity(nextStep, enemy);
-
+        world.removeEnemy(enemy);
+        
         world.getGameFrame().getMapPanel().updateMap();
         return true;
     }
@@ -194,4 +215,13 @@ public class GameMap {
         }
         return size;
     }
+
+
+    public void replaceEntity(GameEntity oldEntity, GameEntity newEntity) {
+        Position pos = oldEntity.getPosition();
+        List<GameEntity> entities = getEntitiesAt(pos);
+        entities.remove(oldEntity);
+        entities.add(newEntity);
+    }
+
 }

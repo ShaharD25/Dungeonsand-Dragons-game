@@ -44,7 +44,7 @@ public class Main {
 
         GameFrame gf = new GameFrame(player);      // Create and show the game GUI
         world.setGameFrame(gf);                    // Set the frame in the game world
-        new GameController(world, player, gf.getMapPanel(), gf.getMapPanel());
+        new GameController(world, gf.getMapPanel(), gf.getMapPanel());
 
         // Start the game logic *after* the GUI is ready, to avoid premature enemy actions
         javax.swing.SwingUtilities.invokeLater(() -> {

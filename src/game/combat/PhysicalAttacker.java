@@ -13,7 +13,7 @@ public interface PhysicalAttacker {
      *
      * @param target The combatant being attacked.
      */
-    void attack(Combatant target);
+    boolean attack(Combatant target);
 
     /**
      * Determines whether the attack is a critical hit.

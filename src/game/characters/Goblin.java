@@ -61,9 +61,16 @@ public class Goblin extends Enemy implements MeleeFighter, PhysicalAttacker {
      * Performs a physical attack by dealing calculated damage to the target.
      */
     @Override
-    public void attack(Combatant target){
-        int damage = calculateDamage();
-        target.receiveDamage(damage,this);
+    public boolean attack(Combatant target) {
+        int damage = 0;
+        boolean isCrit = isCriticalHit();
+        if (isCrit) {
+            damage = getPower() * 2;
+        } else {
+            damage = getPower();
+        }
+        target.receiveDamage(damage, this);
+        return isCrit;
     }
 
     /**

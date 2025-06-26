@@ -4,8 +4,7 @@ import game.characters.Enemy;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+
 
 public class EnemyPool {
     private static EnemyPool INSTANCE;                  // Singleton

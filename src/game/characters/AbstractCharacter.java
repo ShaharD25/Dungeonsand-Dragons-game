@@ -85,15 +85,11 @@ public abstract class AbstractCharacter implements Combatant, GameEntity {
         {
             if(Math.random() > evasionChance * (1 - ((Archer)source).getAccuracy()))
             {
-                this.health -= amount;
-                if (health < 0)
-                    health = 0;
+                setHealth(this.health - amount);
             }
         }
         else if (!tryEvade()) {
-                this.health -= amount;
-                if (health < 0)
-                    health = 0;
+            setHealth(this.health - amount);
         }
     }
 
@@ -119,6 +115,7 @@ public abstract class AbstractCharacter implements Combatant, GameEntity {
 
     // Power getter and setter
     public int getPower(){return power;}
+    
     public void setPower(int power){ this.power = Math.max(1, power);}
 
     // Health getter and setter

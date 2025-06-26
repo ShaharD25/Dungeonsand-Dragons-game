@@ -6,6 +6,8 @@ import game.audio.SoundPlayer;
 import game.logging.LogManager;
 import game.map.Position;
 import game.characters.*;
+import game.decorators.EnemyDecorator;
+import game.decorators.PlayerDecorator;
 import game.decorators.ShieldedPlayerDecorator;
 import game.gui.PopupPanel;
 
@@ -18,6 +20,26 @@ public class CombatSystem {
         Position attackerPos = attacker.getPosition();
         Position defenderPos = defender.getPosition();
 
+        Combatant OriginalAttacker = attacker, OriginalDefender = defender;
+        while(attacker instanceof PlayerDecorator decAtt)
+        	{
+        		attacker = decAtt.getWrapped();
+        	}
+        while(attacker instanceof EnemyDecorator decAtt)
+        	{
+        		attacker = decAtt.getWrapped();
+        	}
+        	
+        while(defender instanceof PlayerDecorator decDef)
+        	{
+        		defender = decDef.getWrapped();
+        	} 	
+        while(defender instanceof EnemyDecorator decDef)
+        	{
+        		defender = decDef.getWrapped();
+        	}
+        	
+        	
         boolean inRange = false;
 
         if (attacker instanceof RangedFighter ranged) {
@@ -38,9 +60,57 @@ public class CombatSystem {
         }
 
         do {
-            boolean isCrit = Math.random() < 0.2;
-            int power = attacker.getPower();
-            int damage = isCrit ? power * 2 : power;
+        		
+            int damage = OriginalDefender.getHealth();
+            boolean isCrit = false;
+            Combatant InnerOriginalAttacker = OriginalAttacker;
+            if (attacker instanceof PhysicalAttacker) {       		             
+                	while(InnerOriginalAttacker instanceof PlayerDecorator decAtt)
+                	{
+                		if(!(InnerOriginalAttacker instanceof PhysicalAttacker))
+                			InnerOriginalAttacker = decAtt.getWrapped();
+                		else break;
+                	}
+                	while(InnerOriginalAttacker instanceof EnemyDecorator decAtt)
+                	{
+                		if(!(InnerOriginalAttacker instanceof PhysicalAttacker))
+                			InnerOriginalAttacker = decAtt.getWrapped();
+                		else break;
+                	}
+                	
+	            	 if(attacker instanceof Dragon dragon && dragon.isInRange(attackerPos,defenderPos) && !dragon.isInMeleeRange(attackerPos, defenderPos))
+	             {
+	                	//dragon.castSpell(OriginalDefender);
+	                	
+             		if(InnerOriginalAttacker instanceof MagicAttacker)
+             			((MagicAttacker)InnerOriginalAttacker).castSpell(OriginalDefender);
+             		else
+             			dragon.castSpell(OriginalDefender);
+	             }
+	            	 else              	
+	            		 isCrit = ((PhysicalAttacker)InnerOriginalAttacker).attack(OriginalDefender);
+
+                    
+            }
+            else
+            {
+                if(attacker instanceof Mage mage && mage.isInRange(attackerPos,defenderPos))
+                {
+	                	while(InnerOriginalAttacker instanceof PlayerDecorator decAtt)
+	                	{
+	                		if(!(InnerOriginalAttacker instanceof MagicAttacker))
+	                			InnerOriginalAttacker = decAtt.getWrapped();
+	                		else break;
+	                	}
+	                	while(InnerOriginalAttacker instanceof EnemyDecorator decAtt)
+	                	{
+	                		if(!(InnerOriginalAttacker instanceof MagicAttacker))
+	                			InnerOriginalAttacker = decAtt.getWrapped();
+	                		else break;
+	                	}
+                		((MagicAttacker)InnerOriginalAttacker).castSpell(OriginalDefender);
+                }
+            }
 
             if (isCrit) {
                 String msg = isHero ? "You landed a CRITICAL HIT!" : "Enemy landed a CRITICAL HIT!";
@@ -49,33 +119,50 @@ public class CombatSystem {
                 SoundPlayer.playSound("critical-hit.wav");
             }
 
-            // בדיקה אם המגן פעיל אצל המגן
-            if (defender instanceof ShieldedPlayerDecorator shielded && shielded.isShieldActive()) {
-                shielded.consumeShield(); // מוריד את המגן לסיבוב הבא
-                PopupPanel.showPopup("Shield Blocked!", "Your shield blocked the incoming attack!");
-                LogManager.log("Shield blocked damage!");
-                SoundPlayer.playSound("shield.wav");
-            } else {
-                defender.setHealth(defender.getHealth() - damage);
-            }
-
-            // הצגת הנזק שנגרם
+            damage = damage - OriginalDefender.getHealth();
             String who = isHero ? "You" : "Enemy";
-            PopupPanel.showPopup("Damage Dealt", who + " dealt " + damage + " damage. Power used: " + power);
+            PopupPanel.showPopup("Damage Dealt", who + " dealt " + damage + " damage");
 
-            if (defender.isDead()) {
-                if (defender instanceof Enemy enemy) {
+
+            if (OriginalDefender.isDead()) {
+                if (OriginalDefender instanceof Enemy enemy) {
                     enemy.defeat();
                     SoundPlayer.playSound("kill.wav");
-                    break;
+                }
+                break;
+            }
+            
+            if(isHero)
+            {
+            		inRange = false;
+                if (defender instanceof RangedFighter ranged) {
+                    if (!ranged.isInRange(attackerPos, defender.getPosition())) {
+                        return;
+                    }
+                    inRange = true;
+                }
+
+                if (!inRange) {
+                    if (defender instanceof MeleeFighter melee) {
+                        if (!melee.isInMeleeRange(attackerPos, defender.getPosition())) {
+                            return;
+                        }
+                    }
                 }
             }
+            
 
-            // תחלופת תוקף ומגן
             Combatant temp = defender;
             defender = attacker;
             attacker = temp;
+            
+            temp = OriginalDefender;
+            OriginalDefender = OriginalAttacker;
+            OriginalAttacker = temp;
+            
             isHero = !isHero;
+            attackerPos = attacker.getPosition();
+            defenderPos = defender.getPosition();
 
         } while (!defender.isDead());
     }

@@ -1,8 +1,11 @@
 package game.decorators;
 
+import game.audio.SoundPlayer;
 import game.characters.PlayerCharacter;
 import game.combat.Combatant;
 import game.combat.CombatSystem;
+import game.gui.PopupPanel;
+import game.logging.LogManager;
 
 
 /**
@@ -30,7 +33,7 @@ public class ShieldedPlayerDecorator extends PlayerDecorator {
     // Optional override to show icon or symbol (no need to change if not needed)
     @Override
     public String getDisplaySymbol() {
-        return wrapped.getDisplaySymbol() + "🛡";
+        return wrapped.getDisplaySymbol() + "נ�›¡";
     }
 
     @Override
@@ -60,7 +63,19 @@ public class ShieldedPlayerDecorator extends PlayerDecorator {
     }
 
 
-
+    @Override
+    public void receiveDamage(int amount, Combatant source)
+    {
+        if (isShieldActive()) {
+            consumeShield(); 
+            PopupPanel.showPopup("Shield Blocked!", "Your shield blocked the incoming attack!");
+            LogManager.log("Shield blocked damage!");
+            SoundPlayer.playSound("shield.wav");
+        } else {
+            super.receiveDamage(amount,source);
+            //defender.setHealth(defender.getHealth() - damage);
+        }
+    }
 
 
     @Override

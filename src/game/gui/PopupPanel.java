@@ -2,6 +2,7 @@ package game.gui;
 import game.characters.Enemy;
 import game.characters.PlayerCharacter;
 import game.core.GameEntity;
+import game.decorators.EnemyDecorator;
 import game.engine.GameWorld;
 import game.items.Potion;
 import game.items.PowerPotion;
@@ -37,7 +38,7 @@ public class PopupPanel {
 
     public static void quickPopup( GameWorld world, Position pos)
     {
-        List<GameEntity> entities = new ArrayList<>(world.getMap().getEntitiesAt(pos));
+        List<GameEntity> entities = world.getMap().getEntitiesAt(pos);
         String message = "Nothing here.";
         enemyHealth = null;
         Integer heroHealth = null;
@@ -45,6 +46,17 @@ public class PopupPanel {
             if (entity == null) continue;
 
             if (entity instanceof Enemy enemy) {
+            		// Get the base enemy type for display
+                String enemyType = enemy.getClass().getSimpleName();
+                if (enemy instanceof EnemyDecorator decorator) {
+                    // Get the wrapped enemy's type
+                    Enemy base = decorator.getWrapped();
+                    while (base instanceof EnemyDecorator) {
+                        base = ((EnemyDecorator) base).getWrapped();
+                    }
+                    enemyType = decorator.getClass().getSimpleName().replace("Decorator", "") + 
+                               " " + base.getClass().getSimpleName();
+                }
                 enemyHealth = enemy.getHealth();
                 message = "You encountered a " + enemy.getClass().getSimpleName()
                         + "\nEnemy HP: " + enemyHealth + "/50";

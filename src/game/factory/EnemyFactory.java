@@ -13,6 +13,7 @@ import game.decorators.TeleportingEnemyDecorator;
 import game.decorators.VampireEnemyDecorator;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EnemyFactory {
     private static final Random random = new Random();
@@ -45,11 +46,12 @@ public class EnemyFactory {
                 .setType(enemyClass)
                 .setPosition(position)
                 .build();
-
-        return wrapWithRandomDecorator(baseEnemy);
+        gw.getMap().addEntity(baseEnemy.getPosition(), baseEnemy);
+        System.out.println(baseEnemy + "was created at: " + baseEnemy.getPosition());
+        return baseEnemy;
     }
 
-    private static Enemy wrapWithRandomDecorator(Enemy enemy) {
+    public static Enemy wrapWithRandomDecorator(Enemy enemy) {
         int type = random.nextInt(3); // 0, 1, 2
         String decoratorName = "";
         Enemy decorated = enemy;
@@ -69,6 +71,10 @@ public class EnemyFactory {
             }
         }
 
+        if (enemy.active != null) {
+            decorated.active = new AtomicBoolean(enemy.active.get());
+        }
+        decorated.setPosition(enemy.getPosition());
         // Debug log instead of popup (can remove if not needed)
         System.out.println("[DEBUG] " + enemy.getClass().getSimpleName() + " received " + decoratorName + " decorator");
 
